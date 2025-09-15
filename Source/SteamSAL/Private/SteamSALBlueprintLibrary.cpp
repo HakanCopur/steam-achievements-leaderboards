@@ -23,12 +23,12 @@ bool USteamSALBlueprintLibrary::IsSteamAvailable(const UObject* WorldContextObje
 	}
 
 	// Gather Steam interface state
-	const bool bHasUser       = (SteamUser()      != nullptr);
-	const bool bHasUserStats  = (SteamUserStats() != nullptr);
-	const bool bHasUtils      = (SteamUtils()     != nullptr);
+	const bool bHasUser = (SteamUser() != nullptr);
+	const bool bHasUserStats = (SteamUserStats() != nullptr);
+	const bool bHasUtils = (SteamUtils() != nullptr);
 
-	const uint32 AppID        = SteamUtils() ? SteamUtils()->GetAppID() : 0;
-	const bool   bLoggedOn    = SteamUser() ? SteamUser()->BLoggedOn()  : false;
+	const uint32 AppID = SteamUtils() ? SteamUtils()->GetAppID() : 0;
+	const bool bLoggedOn = SteamUser() ? SteamUser()->BLoggedOn() : false;
 
 	// (Optional) See which Online Subsystem is active; don't gate on it, just log for clarity
 	const IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
@@ -41,13 +41,14 @@ bool USteamSALBlueprintLibrary::IsSteamAvailable(const UObject* WorldContextObje
 	const bool bAvailable = bHasUser && bHasUserStats && bHasUtils && (AppID != 0) && bLoggedOn;
 
 	// Helpful logs
-	UE_LOG(LogTemp, Log, TEXT("[SAL_IsSteamAvailable] IsSteamAvailable() = %s"), bAvailable ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogTemp, Log, TEXT("[SAL_IsSteamAvailable] IsSteamAvailable() = %s"),
+	       bAvailable ? TEXT("true") : TEXT("false"));
 	UE_LOG(LogTemp, Log, TEXT("[SAL_IsSteamAvailable] OSS=%s  AppID=%u  SteamUserStats=%s  SteamUser=%s  LoggedOn=%s"),
-		*OSSName,
-		AppID,
-		bHasUserStats ? TEXT("OK") : TEXT("null"),
-		bHasUser      ? TEXT("OK") : TEXT("null"),
-		bLoggedOn     ? TEXT("true") : TEXT("false"));
+	       *OSSName,
+	       AppID,
+	       bHasUserStats ? TEXT("OK") : TEXT("null"),
+	       bHasUser ? TEXT("OK") : TEXT("null"),
+	       bLoggedOn ? TEXT("true") : TEXT("false"));
 
 	return bAvailable;
 }
@@ -146,7 +147,8 @@ bool USteamSALBlueprintLibrary::ClearAchievement(const FString& AchievementAPINa
 	return SteamUserStats()->ClearAchievement(TCHAR_TO_ANSI(*AchievementAPIName));
 }
 
-void USteamSALBlueprintLibrary::GetAchievementStatus(const FString& AchievementAPIName, bool& bUnlocked, int32& UnlockUnixTime, bool& bSuccess)
+void USteamSALBlueprintLibrary::GetAchievementStatus(const FString& AchievementAPIName, bool& bUnlocked,
+                                                     int32& UnlockUnixTime, bool& bSuccess)
 {
 	bUnlocked = false;
 	UnlockUnixTime = 0;
@@ -226,7 +228,8 @@ UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& Achieve
 	return Texture;
 }
 
-void USteamSALBlueprintLibrary::GetAchievementDisplayInfo(const FString& AchievementAPIName, FString& DisplayName, FString& Description, bool& bSuccess)
+void USteamSALBlueprintLibrary::GetAchievementDisplayInfo(const FString& AchievementAPIName, FString& DisplayName,
+                                                          FString& Description, bool& bSuccess)
 {
 	DisplayName = TEXT("");
 	Description = TEXT("");
@@ -234,11 +237,11 @@ void USteamSALBlueprintLibrary::GetAchievementDisplayInfo(const FString& Achieve
 
 	if (!SteamUserStats())
 	{
-		return; 
+		return;
 	}
 
-	const char* Name  = SteamUserStats()->GetAchievementDisplayAttribute(TCHAR_TO_ANSI(*AchievementAPIName), "name");
-	const char* Desc  = SteamUserStats()->GetAchievementDisplayAttribute(TCHAR_TO_ANSI(*AchievementAPIName), "desc");
+	const char* Name = SteamUserStats()->GetAchievementDisplayAttribute(TCHAR_TO_ANSI(*AchievementAPIName), "name");
+	const char* Desc = SteamUserStats()->GetAchievementDisplayAttribute(TCHAR_TO_ANSI(*AchievementAPIName), "desc");
 
 	if (Name) { DisplayName = FString(ANSI_TO_TCHAR(Name)); }
 	if (Desc) { Description = FString(ANSI_TO_TCHAR(Desc)); }
@@ -246,27 +249,10 @@ void USteamSALBlueprintLibrary::GetAchievementDisplayInfo(const FString& Achieve
 	bSuccess = (Name != nullptr || Desc != nullptr);
 }
 
-void USteamSALBlueprintLibrary::GetGlobalAchievementPercent(const FString& AchievementAPIName, float& Percent, bool& bSuccess)
+void USteamSALBlueprintLibrary::GetGlobalAchievementPercent(const FString& AchievementAPIName, float& Percent,
+                                                            bool& bSuccess)
 {
-	Percent  = 0.0f;
-	bSuccess = false;
-
-	if (!SteamUserStats())
-	{
-		return; 
-	}
-
-	float Pct = 0.0f;
-	if (SteamUserStats()->GetAchievementAchievedPercent(TCHAR_TO_ANSI(*AchievementAPIName), &Pct))
-	{
-		Percent  = Pct;    
-		bSuccess = true;
-	}
-}
-
-void USteamSALBlueprintLibrary::GetNumberOfAchievements(int32& Count, bool& bSuccess)
-{
-	Count    = 0;
+	Percent = 0.0f;
 	bSuccess = false;
 
 	if (!SteamUserStats())
@@ -274,16 +260,79 @@ void USteamSALBlueprintLibrary::GetNumberOfAchievements(int32& Count, bool& bSuc
 		return;
 	}
 
-	Count    = SteamUserStats()->GetNumAchievements();
+	float Pct = 0.0f;
+	if (SteamUserStats()->GetAchievementAchievedPercent(TCHAR_TO_ANSI(*AchievementAPIName), &Pct))
+	{
+		Percent = Pct;
+		bSuccess = true;
+	}
+}
+
+void USteamSALBlueprintLibrary::GetNumberOfAchievements(int32& Count, bool& bSuccess)
+{
+	Count = 0;
+	bSuccess = false;
+
+	if (!SteamUserStats())
+	{
+		return;
+	}
+
+	Count = SteamUserStats()->GetNumAchievements();
 	bSuccess = true;
 }
 
+void USteamSALBlueprintLibrary::IndicateAchievementProgress(FName AchievementAPIName,
+                                                            int32 CurrentProgress, int32 MaxProgress, bool& bSuccess)
+{
+	bSuccess = false;
+
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] IndicateAchievementProgress: SteamUserStats unavailable"));
+		return;
+	}
+
+	if (AchievementAPIName.IsNone() || MaxProgress <= 0 || CurrentProgress < 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] IndicateAchievementProgress: Invalid params (Name=%s, Cur=%d, Max=%d)"),
+		       *AchievementAPIName.ToString(), CurrentProgress, MaxProgress);
+		return;
+	}
+
+	const FString NameStr = AchievementAPIName.ToString();
+	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*NameStr);
+
+	// Clamp progress values
+	uint32 Cur = static_cast<uint32>(FMath::Clamp(CurrentProgress, 0, MaxProgress));
+	uint32 Max = static_cast<uint32>(MaxProgress);
+
+	// Show progress toast
+	bool bIndicated = SteamUserStats()->IndicateAchievementProgress(AnsiName, Cur, Max);
+
+	// Auto-unlock when complete
+	if (bIndicated && Cur >= Max)
+	{
+		bool bUnlocked = false;
+		SteamUserStats()->GetAchievement(AnsiName, &bUnlocked);
+
+		if (!bUnlocked)
+		{
+			bool bSet = SteamUserStats()->SetAchievement(AnsiName);
+			bool bStore = SteamUserStats()->StoreStats();
+			bIndicated = bIndicated && bSet && bStore;
+		}
+	}
+
+	bSuccess = bIndicated;
+}
+
 void USteamSALBlueprintLibrary::GetStoredStat(const FString& StatAPIName, ESALStatReadType StatType,
-											  int32& IntegerValue, float& FloatValue, bool& bSuccess)
+                                              int32& IntegerValue, float& FloatValue, bool& bSuccess)
 {
 	IntegerValue = 0;
-	FloatValue   = 0.0f;
-	bSuccess     = false;
+	FloatValue = 0.0f;
+	bSuccess = false;
 
 	if (!SteamUserStats())
 	{
@@ -320,8 +369,8 @@ void USteamSALBlueprintLibrary::GetStoredStat(const FString& StatAPIName, ESALSt
 }
 
 void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& StatsToGet,
-											   TArray<FSAL_StoredStat>& StatsOut,
-											   bool& bAllSucceeded)
+                                               TArray<FSAL_StoredStat>& StatsOut,
+                                               bool& bAllSucceeded)
 {
 	StatsOut.Empty();
 	bAllSucceeded = false;
@@ -337,7 +386,7 @@ void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& Sta
 	for (const FSAL_StatQuery& Q : StatsToGet)
 	{
 		FSAL_StoredStat Out;
-		Out.APIStatName      = Q.APIStatName;
+		Out.APIStatName = Q.APIStatName;
 		Out.FriendlyStatName = Q.FriendlyStatName.IsEmpty() ? Q.APIStatName : Q.FriendlyStatName;
 
 		// Treat Average as Float (if you kept it in your enum)
@@ -366,6 +415,3 @@ void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& Sta
 
 	bAllSucceeded = AllOK;
 }
-
-
-

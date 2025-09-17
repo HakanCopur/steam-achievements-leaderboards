@@ -199,15 +199,29 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
 	meta=(
-		DisplayName="Get Global Stat (Aggregated)",
-		ToolTip="Reads an aggregated (global) stat cached by Steam. Requires a successful 'Request Global Stats' earlier in the session. Integer returns via IntegerValue; Float/Average via FloatValue.",
-		Keywords="steam stats global aggregated community total average avgrate"
+		DisplayName="Get Global Stat",
+		ToolTip="Reads a single aggregated (global) stat cached by Steam. Requires a successful 'Request Global Stats' earlier in the session. Returns the value formatted as a string.",
+		Keywords="steam stats global aggregated community total average avgrate string"
 	))
 	static void GetGlobalStat(
 		const FString& StatAPIName,
 		ESALStatReadType StatType,
-		int64& IntegerValue,
-		double& FloatValue,
+		FString& ValueAsString,
+		bool& bSuccess
+	);
+
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
+	meta=(
+		DisplayName="Get Global Stat History",
+		ToolTip="Reads the historical values of a global aggregated stat (after a successful 'Request Global Stats'). Returns an array of stringified values, one per day. Index 0 = most recent.",
+		Keywords="steam stats global aggregated history trend daily array"
+	))
+	static void GetGlobalStatHistory(
+		const FString& StatAPIName,
+		ESALStatReadType StatType,
+		int32 NumSamplesRequested,
+		TArray<FString>& HistoryValues,
 		bool& bSuccess
 	);
 

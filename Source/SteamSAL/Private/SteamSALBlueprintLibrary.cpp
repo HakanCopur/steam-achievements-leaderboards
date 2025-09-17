@@ -568,13 +568,11 @@ void USteamSALBlueprintLibrary::ShowAchievementsOverlay(bool& bSuccess)
 void USteamSALBlueprintLibrary::GetGlobalStat(
 	const FString& StatAPIName,
 	ESALStatReadType StatType,
-	int64& IntegerValue,
-	double& FloatValue,
+	FString& ValueAsString,
 	bool& bSuccess)
 {
-	bSuccess     = false;
-	IntegerValue = 0;
-	FloatValue   = 0.0;
+	bSuccess = false;
+	ValueAsString.Empty();
 
 	if (SteamUserStats() == nullptr)
 	{
@@ -589,44 +587,103 @@ void USteamSALBlueprintLibrary::GetGlobalStat(
 
 	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
 
-	switch (StatType)
+	if (StatType == ESALStatReadType::Integer)
 	{
-	case ESALStatReadType::Integer:
+		int64 Val = 0;
+		if (SteamUserStats()->GetGlobalStat(AnsiName, &Val))
 		{
-			int64 Val = 0;
-			const bool ok = SteamUserStats()->GetGlobalStat(AnsiName, &Val);
-			if (ok)
-			{
-				IntegerValue = Val;
-				bSuccess = true;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: GetGlobalStat(int64) failed for '%s'"), *StatAPIName);
-			}
-			break;
+			ValueAsString = FString::Printf(TEXT("%lld"), Val);
+			bSuccess = true;
 		}
-	case ESALStatReadType::Float:
-	case ESALStatReadType::Average: // average is read as a floating value
+	}
+	else if (StatType == ESALStatReadType::Float || StatType == ESALStatReadType::Average)
+	{
+		double Val = 0.0;
+		if (SteamUserStats()->GetGlobalStat(AnsiName, &Val))
 		{
-			double Val = 0.0;
-			const bool ok = SteamUserStats()->GetGlobalStat(AnsiName, &Val);
-			if (ok)
-			{
-				FloatValue = Val;
-				bSuccess = true;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: GetGlobalStat(double) failed for '%s'"), *StatAPIName);
-			}
-			break;
+			ValueAsString = FString::SanitizeFloat(Val);
+			bSuccess = true;
 		}
-	default:
+	}
+	else
+	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: Unsupported StatType for '%s'"), *StatAPIName);
-		break;
+	}
+	
+}
+
+
+void USteamSALBlueprintLibrary::GetGlobalStatHistory(
+	const FString& StatAPIName,
+	ESALStatReadType StatType,
+	int32 NumSamplesRequested,
+	TArray<FString>& HistoryValues,
+	bool& bSuccess)
+{
+	bSuccess = false;
+	HistoryValues.Empty();
+
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStatHistory: SteamUserStats unavailable"));
+		return;
 	}
 
+	if (StatAPIName.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStatHistory: Empty StatAPIName"));
+		return;
+	}
+
+	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
+
+	if (StatType == ESALStatReadType::Integer)
+	{
+		TArray<int64> Buffer;
+		Buffer.SetNumUninitialized(NumSamplesRequested);
+
+		int32 NumGot = SteamUserStats()->GetGlobalStatHistory(
+			AnsiName,
+			Buffer.GetData(),
+			NumSamplesRequested
+		);
+
+		if (NumGot > 0)
+		{
+			for (int32 i = 0; i < NumGot; i++)
+			{
+				HistoryValues.Add(FString::Printf(TEXT("%lld"), Buffer[i]));
+			}
+			bSuccess = true;
+		}
+	}
+	else if (StatType == ESALStatReadType::Float || StatType == ESALStatReadType::Average)
+	{
+		TArray<double> Buffer;
+		Buffer.SetNumUninitialized(NumSamplesRequested);
+
+		int32 NumGot = SteamUserStats()->GetGlobalStatHistory(
+			AnsiName,
+			Buffer.GetData(),
+			NumSamplesRequested
+		);
+
+		if (NumGot > 0)
+		{
+			for (int32 i = 0; i < NumGot; i++)
+			{
+				HistoryValues.Add(FString::SanitizeFloat(Buffer[i]));
+			}
+			bSuccess = true;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStatHistory: Unsupported StatType for '%s'"), *StatAPIName);
+	}
+
+
 }
+
 
 

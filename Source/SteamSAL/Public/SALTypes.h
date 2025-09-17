@@ -181,3 +181,37 @@ struct FSAL_StoredStat
 		meta=(ToolTip="True if this individual read succeeded from cached Steam data."))
 	bool bSucceeded = false;
 };
+
+USTRUCT(BlueprintType)
+struct FSAL_StatWrite
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
+		meta=(ToolTip="Stat API name exactly as defined in Steam (e.g., 'TOTAL_JUMPS')."))
+	FString APIStatName = TEXT("");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
+		meta=(ToolTip="Write type (Integer, Float, or Average). Average uses CountThisSession & SessionLengthSeconds."))
+	ESALStatReadType StatType = ESALStatReadType::Integer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
+		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Integer",
+			  ToolTip="New integer value to set when StatType is Integer."))
+	int32 IntegerValue = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
+		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Float",
+			  ToolTip="New float value to set when StatType is Float."))
+	float FloatValue = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
+		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",
+			  ToolTip="Average stats: amount counted this session (e.g., events)."))
+	float CountThisSession = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
+		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",
+			  ToolTip="Average stats: duration for this measurement in seconds (must be > 0)."))
+	float SessionLengthSeconds = 0.0f;
+};

@@ -161,4 +161,32 @@ public:
 		))
 	static void GetStoredStats(const TArray<FSAL_StatQuery>& StatsToGet, TArray<FSAL_StoredStat>& StatsOut,
 	                           bool& bAllSucceeded);
+
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
+	meta=(
+		DisplayName="Set Stored Stat",
+		ToolTip="Writes a stat into the local Steam cache. Pick the Stat Type, then fill the matching value pins (Integer/Float or AvgRate: Count & SessionSeconds). Call 'Store Stats & Achievements (Async)' afterwards to persist.",
+		Keywords="steam stats set write update modify local cached store average rate avgrate"
+	))
+	static void SetStoredStat(
+		const FString& StatAPIName,
+		ESALStatReadType StatType,
+		int32 IntegerValue,
+		float FloatValue,
+		float CountThisSession,
+		float SessionLengthSeconds,
+		bool& bSuccess
+	);
+
+	// --- Batch stat write, array form (uses FSAL_StatWrite per entry) ---
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
+		meta=(
+			DisplayName="Set Stored Stats (Batch)",
+			ToolTip="Writes multiple stats into the local Steam cache in one call. Each item selects Integer/Float/Average and its value pins. Call 'Store Stats & Achievements (Async)' afterwards to persist.",
+			Keywords="steam stats set write batch multiple array local cached store average rate avgrate"
+		))
+	static void SetStoredStats(
+		const TArray<FSAL_StatWrite>& StatsToSet,
+		bool& bAllSucceeded
+	);
 };

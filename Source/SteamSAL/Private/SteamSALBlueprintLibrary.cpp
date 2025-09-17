@@ -415,3 +415,111 @@ void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& Sta
 
 	bAllSucceeded = AllOK;
 }
+
+void USteamSALBlueprintLibrary::SetStoredStat(
+	const FString& StatAPIName,
+	ESALStatReadType StatType,
+	int32 IntegerValue,
+	float FloatValue,
+	float CountThisSession,
+	float SessionLengthSeconds,
+	bool& bSuccess)
+{
+	bSuccess = false;
+
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SteamUserStats unavailable"));
+		return;
+	}
+
+	if (StatAPIName.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: Empty StatAPIName"));
+		return;
+	}
+
+	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
+
+	switch (StatType)
+	{
+	case ESALStatReadType::Integer:
+		{
+			const bool ok = SteamUserStats()->SetStat(AnsiName, IntegerValue);
+			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SetStat(int) failed for '%s' (%d)"), *StatAPIName, IntegerValue);
+			bSuccess = ok;
+			break;
+		}
+	case ESALStatReadType::Float:
+		{
+			const bool ok = SteamUserStats()->SetStat(AnsiName, FloatValue);
+			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SetStat(float) failed for '%s' (%f)"), *StatAPIName, FloatValue);
+			bSuccess = ok;
+			break;
+		}
+	case ESALStatReadType::Average:
+		{
+			if (SessionLengthSeconds <= 0.0f)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: AvgRate requires SessionLengthSeconds > 0 for '%s'"), *StatAPIName);
+				return;
+			}
+			const bool ok = SteamUserStats()->UpdateAvgRateStat(AnsiName, CountThisSession, SessionLengthSeconds);
+			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: UpdateAvgRateStat failed for '%s' (Count=%f, Sec=%f)"),
+							*StatAPIName, CountThisSession, SessionLengthSeconds);
+			bSuccess = ok;
+			break;
+		}
+	default:
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: Unsupported StatType for '%s'"), *StatAPIName);
+			break;
+		}
+	}
+
+}
+
+void USteamSALBlueprintLibrary::SetStoredStats(
+	const TArray<FSAL_StatWrite>& StatsToSet,
+	bool& bAllSucceeded)
+{
+	bAllSucceeded = false;
+
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStats: SteamUserStats unavailable"));
+		return;
+	}
+
+	if (StatsToSet.Num() == 0)
+	{
+		// Nothing to do; consider it a success
+		bAllSucceeded = true;
+		return;
+	}
+
+	bool bAnyFail = false;
+	for (const FSAL_StatWrite& W : StatsToSet)
+	{
+		bool bOne = false;
+		USteamSALBlueprintLibrary::SetStoredStat(
+			W.APIStatName,
+			W.StatType,
+			W.IntegerValue,
+			W.FloatValue,
+			W.CountThisSession,
+			W.SessionLengthSeconds,
+			bOne
+		);
+		if (!bOne) { bAnyFail = true; }
+	}
+
+	bAllSucceeded = !bAnyFail;
+
+	if (!bAllSucceeded)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStats: one or more writes failed"));
+	}
+	
+}
+

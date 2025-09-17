@@ -180,7 +180,7 @@ FString USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex)
 }
 
 
-UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& AchievementAPIName, bool bUnlockedIcon)
+UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& AchievementAPIName)
 {
 	if (!SteamUserStats() || !SteamUtils())
 	{

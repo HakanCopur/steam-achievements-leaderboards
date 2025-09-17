@@ -8,9 +8,6 @@
 
 #include "SteamSALBlueprintLibrary.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class STEAMSAL_API USteamSALBlueprintLibrary : public UBlueprintFunctionLibrary
 {
@@ -26,10 +23,13 @@ public:
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Identity",
 		meta=(
 			DisplayName="Get SteamID",
-			ToolTip="Gets the SteamID64 string (17-digit) for this player. Returns false if invalid.",
-			Keywords="Steam SteamID ID64 UniqueNetId Player Controller"
+			ToolTip="Gets the user's SteamID64 as a 17-digit string. Outputs empty string if unavailable.",
+			Keywords="steam steamid id64 UniqueNetId player controller"
 		))
-	static void GetSteamID64FromController(APlayerController* PlayerController, FString& SteamID);
+	static void GetSteamID64FromController(
+		APlayerController* PlayerController,
+		UPARAM(meta=(DisplayName="SteamID (String)"))
+		FString& SteamID);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Leaderboard",
 		meta=(
@@ -102,11 +102,12 @@ public:
 	static FString GetAchievementAPIName(int32 AchievementIndex);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
-	meta=(DisplayName="Get Achievement Icon",
-		  ReturnDisplayName="Icon Texture",
-		  ToolTip="Retrieves the Steam-provided icon (locked or unlocked) for the given achievement."))
-	static UTexture2D* GetAchievementIcon(const FString& AchievementAPIName, bool bUnlockedIcon);
-
+		meta=(
+			DisplayName="Get Achievement Icon",
+			ReturnDisplayName="Icon Texture",
+			ToolTip="Retrieves the Steam-provided icon texture for the given achievement."
+		))
+	static UTexture2D* GetAchievementIcon(const FString& AchievementAPIName);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
 		meta=(
@@ -130,130 +131,170 @@ public:
 	static void GetNumberOfAchievements(int32& Count, bool& bSuccess);
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Achievements",
-		meta=(WorldContext="WorldContextObject",
+		meta=(
 			DisplayName="Indicate Achievement Progress",
-			ToolTip="Show Steam overlay progress for the given AchievementName and auto-unlock when complete.",
-			Keywords="Steam Achievement Progress Unlock Toast Notify"))
+			ToolTip=
+			"Shows a Steam overlay progress toast (Current/Max). Auto-unlocks when Current ≥ Max. Requires MaxProgress > 0."
+			,
+			Keywords="steam achievement progress unlock toast notify overlay"
+		))
 	static void IndicateAchievementProgress(
+		UPARAM(meta=(DisplayName="Achievement API Name"))
 		FName AchievementAPIName,
 		int32 CurrentProgress,
 		int32 MaxProgress,
-		bool& bSuccess
-	);
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
 
-	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
-		meta=(DisplayName="Get Stored Stat",
-			ToolTip=
-			"Reads a cached stat loaded via 'Request Current Stats'. Select the stat type; value is returned in the corresponding output."
-			,
-			Keywords="steam stats get stored cached integer float average"))
-	static void GetStoredStat(const FString& StatAPIName, ESALStatReadType StatType,
-	                          int32& IntegerValue, float& FloatValue, bool& bSuccess);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
 		meta=(
-			DisplayName="Get Stored Stats (Batch)",
+			DisplayName="Get Local (Cached) Stat",
 			ToolTip=
-			"Reads multiple cached stats (after Request Current Stats). Provide API names and read types; returns an array of results you can Break in Blueprint."
+			"Reads a stat from the local cache (after a successful 'Request Current Stats And Achievements'). Select the Stat Type; value is returned in the matching output."
 			,
-			Keywords="steam stats get stored cached batch multiple array"
+			Keywords="steam stats get local cached stored integer float average"
 		))
-	static void GetStoredStats(const TArray<FSAL_StatQuery>& StatsToGet, TArray<FSAL_StoredStat>& StatsOut,
-	                           bool& bAllSucceeded);
+	static void GetStoredStat(
+		const FString& StatAPIName, ESALStatReadType StatType,
+		UPARAM(meta=(DisplayName="Integer Value"))
+		int32& IntegerValue,
+		UPARAM(meta=(DisplayName="Float Value"))
+		float& FloatValue,
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
 
-	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
-	meta=(
-		DisplayName="Set Stored Stat",
-		ToolTip="Writes a stat into the local Steam cache. Pick the Stat Type, then fill the matching value pins (Integer/Float or AvgRate: Count & SessionSeconds). Call 'Store Stats & Achievements (Async)' afterwards to persist.",
-		Keywords="steam stats set write update modify local cached store average rate avgrate"
-	))
-	static void SetStoredStat(
-		const FString& StatAPIName,
-		ESALStatReadType StatType,
-		int32 IntegerValue,
-		float FloatValue,
-		float CountThisSession,
-		float SessionLengthSeconds,
-		bool& bSuccess
-	);
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
+		meta=(
+			DisplayName="Get Local (Cached) Stats (Batch)",
+			ToolTip=
+			"Reads multiple stats from the local cache (after Request Current Stats And Achievements). Provide API names and types; returns an array you can Break."
+			,
+			Keywords="steam stats get local cached stored batch multiple array"
+		))
+	static void GetStoredStats(
+		const TArray<FSAL_StatQuery>& StatsToGet,
+		TArray<FSAL_StoredStat>& StatsOut,
+		UPARAM(meta=(DisplayName="All Succeeded"))
+		bool& bAllSucceeded);
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
 		meta=(
-			DisplayName="Set Stored Stats (Batch)",
-			ToolTip="Writes multiple stats into the local Steam cache in one call. Each item selects Integer/Float/Average and its value pins. Call 'Store Stats & Achievements (Async)' afterwards to persist.",
+			DisplayName="Set Local (Cached) Stat",
+			ToolTip=
+			"Writes a stat into the local Steam cache. Pick Stat Type; fill matching pins (Integer/Float or AvgRate: Count & Seconds). Call 'Store User Stats & Achievements (Async)' to persist."
+			,
+			Keywords="steam stats set write update modify local cached store average rate avgrate"
+		))
+	static void SetStoredStat(
+		const FString& StatAPIName, ESALStatReadType StatType,
+		int32 IntegerValue, float FloatValue,
+		float CountThisSession, float SessionLengthSeconds,
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
+
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
+		meta=(
+			DisplayName="Set Local (Cached) Stats (Batch)",
+			ToolTip=
+			"Writes multiple stats into the local cache. Each entry selects Integer/Float/Average and its value pins. Call 'Store User Stats & Achievements (Async)' to persist."
+			,
 			Keywords="steam stats set write batch multiple array local cached store average rate avgrate"
 		))
 	static void SetStoredStats(
 		const TArray<FSAL_StatWrite>& StatsToSet,
-		bool& bAllSucceeded
-	);
+		UPARAM(meta=(DisplayName="All Succeeded"))
+		bool& bAllSucceeded);
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
-	meta=(
-		DisplayName="Clear User Stats And Achievements",
-		ToolTip="Resets ALL user stats to their default values. Optionally also clear ALL achievements. Call 'Store Stats & Achievements (Async)' afterwards to persist; then call 'Request Current Stats' to refresh cache.",
-		Keywords="steam stats reset clear wipe defaults achievements dev testing danger",
-		bAlsoResetAchievements="true"
-	))
-	static void ClearUserStats(bool bAlsoResetAchievements, bool& bSuccess);
-	
+		meta=(
+			DisplayName="Clear User Stats And Achievements",
+			ToolTip=
+			"Resets ALL user stats to their default values. Optionally also relocks ALL achievements. Dev/testing only. After this, call 'Store User Stats & Achievements (Async)' to persist, then 'Request Current Stats And Achievements' to refresh the cache."
+			,
+			Keywords="steam stats reset clear wipe defaults achievements dev testing debug danger",
+			AdvancedDisplay="bAlsoResetAchievements",
+			DefaultValue="false"
+		))
+	static void ClearUserStats(
+		UPARAM(meta=(DisplayName="Also Reset Achievements"))
+		bool bAlsoResetAchievements,
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
+
+
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
-	meta=(
-		DisplayName="Get Global Stat",
-		ToolTip="Reads a single aggregated (global) stat cached by Steam. Requires a successful 'Request Global Stats' earlier in the session. Returns the value formatted as a string.",
-		Keywords="steam stats global aggregated community total average avgrate string"
-	))
+		meta=(
+			DisplayName="Get Global Stat (Aggregated)",
+			ToolTip=
+			"Reads a single aggregated (global) stat from Steam's cache. Requires 'Request Global Stats' earlier this session. Returns the value as a string (ints have no decimals; floats are sanitized)."
+			,
+			Keywords="steam stats global aggregated community total average avgrate string"
+		))
 	static void GetGlobalStat(
-		const FString& StatAPIName,
-		ESALStatReadType StatType,
+		const FString& StatAPIName, ESALStatReadType StatType,
+		UPARAM(meta=(DisplayName="Value (String)"))
 		FString& ValueAsString,
-		bool& bSuccess
-	);
-
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
-	meta=(
-		DisplayName="Get Global Stat History",
-		ToolTip="Reads the historical values of a global aggregated stat (after a successful 'Request Global Stats'). Returns an array of stringified values, one per day. Index 0 = most recent.",
-		Keywords="steam stats global aggregated history trend daily array"
-	))
+		meta=(
+			DisplayName="Get Global Stat History",
+			ToolTip=
+			"Reads historical values of a global aggregated stat (after 'Request Global Stats'). Returns stringified values (index 0 = most recent)."
+			,
+			Keywords="steam stats global aggregated history trend daily array"
+		))
 	static void GetGlobalStatHistory(
-		const FString& StatAPIName,
-		ESALStatReadType StatType,
+		const FString& StatAPIName, ESALStatReadType StatType,
 		int32 NumSamplesRequested,
+		UPARAM(meta=(DisplayName="History (String Array)"))
 		TArray<FString>& HistoryValues,
-		bool& bSuccess
-	);
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
+
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Overlay",
-	meta=(
-		DisplayName="Show Achievements Overlay",
-		ToolTip="Opens the Steam overlay to this game's Achievements page. Requires Steam overlay enabled and running under Steam.",
-		Keywords="steam overlay achievements open show ui page"
-	))
-	static void ShowAchievementsOverlay(bool& bSuccess);
+		meta=(
+			DisplayName="Show Achievements Overlay",
+			ToolTip=
+			"Opens the Steam overlay to this game's Achievements page. Requires the Steam overlay to be enabled and running under Steam."
+			,
+			Keywords="steam overlay achievements open show ui page"
+		))
+	static void ShowAchievementsOverlay(
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
-	meta=(
-		DisplayName="Add To Stored Stat",
-		ToolTip="Reads a numeric stat from the local cache, adds Delta, and writes it back. Works for Integer and Float stat types. Call 'Store User Stats & Achievements (Async)' afterwards to persist to Steam.",
-		Keywords="steam stats add increment increase int integer float delta local cached store"
-	))
+		meta=(
+			DisplayName="Add To Local (Cached) Stat",
+			ToolTip=
+			"Reads a numeric stat from the local cache, adds Delta, and writes it back. Works for Integer and Float types. NewValue is a float; for Integer stats it will be the integer result cast to float. Call 'Store User Stats & Achievements (Async)' to persist."
+			,
+			Keywords="steam stats add increment increase int integer float delta local cached store"
+		))
 	static void AddToStoredStat(
-		const FString& StatAPIName,
-		ESALStatReadType StatType,
+		const FString& StatAPIName, ESALStatReadType StatType,
 		float Delta,
+		UPARAM(meta=(DisplayName="New Value"))
 		float& NewValue,
-		bool& bSuccess
-	);
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
+
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
-	meta=(
-		DisplayName="List All Achievement API Names",
-		ToolTip="Returns all achievement API identifiers defined for this app (requires a successful Request Current Stats earlier this session).",
-		Keywords="steam achievements list all api names ids schema"
-	))
-	static void ListAllAchievementAPINames(TArray<FString>& AchievementAPINames, bool& bSuccess);
-
-	
+		meta=(
+			DisplayName="List All Achievement API Names",
+			ToolTip=
+			"Returns all achievement API identifiers defined for this app (requires a successful 'Request Current Stats And Achievements' earlier this session)."
+			,
+			Keywords="steam achievements list all api names ids schema"
+		))
+	static void ListAllAchievementAPINames(
+		UPARAM(meta=(DisplayName="Achievement API Names"))
+		TArray<FString>& AchievementAPINames,
+		UPARAM(meta=(DisplayName="Success"))
+		bool& bSuccess);
 };

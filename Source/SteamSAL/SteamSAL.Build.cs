@@ -13,9 +13,6 @@ public class SteamSAL : ModuleRules
         // Add these *only if* you actually use them in code elsewhere.
         PrivateDependencyModuleNames.AddRange(new string[] {
             "OnlineSubsystem"
-            // "OnlineSubsystem",
-            // "OnlineSubsystemUtils",
-            // "OnlineSubsystemSteam"
         });
 
         // This is the key line that exposes the Steamworks SDK and links steam_api.

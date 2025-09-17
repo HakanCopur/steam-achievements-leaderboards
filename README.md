@@ -1,15 +1,16 @@
-# **SteamSAL — Steam Achievements & Leaderboards for UE5**
-
-![SteamSAL Icon](Resources/Icon128.png)
+<h1 align="center"><b>SteamSAL — Steam Achievements & Leaderboards for UE5</b></h1>
 
 <p align="center">
-Blueprint-first, async-driven, tiny API surface.<br/>
-Supports Unreal Engine <b>5.0 → 5.4</b> on <b>Win64</b>.
+  <img src="Resources/Icon128.png" alt="SteamSAL Icon" width="96" height="96" />
 </p>
 
----
+<p align="center">
+  Blueprint-first, async-driven, tiny API surface.<br/>
+  Supports Unreal Engine <b>5.0 → 5.4</b> on <b>Win64</b>.
+</p>
 
 ## **Table of Contents**
+- [**Table of Contents**](#table-of-contents)
 - [**About**](#about)
 - [**Features**](#features)
 - [**Compatibility**](#compatibility)

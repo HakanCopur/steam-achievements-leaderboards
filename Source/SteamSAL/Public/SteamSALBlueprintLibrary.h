@@ -232,6 +232,28 @@ public:
 		Keywords="steam overlay achievements open show ui page"
 	))
 	static void ShowAchievementsOverlay(bool& bSuccess);
-	
+
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
+	meta=(
+		DisplayName="Add To Stored Stat",
+		ToolTip="Reads a numeric stat from the local cache, adds Delta, and writes it back. Works for Integer and Float stat types. Call 'Store User Stats & Achievements (Async)' afterwards to persist to Steam.",
+		Keywords="steam stats add increment increase int integer float delta local cached store"
+	))
+	static void AddToStoredStat(
+		const FString& StatAPIName,
+		ESALStatReadType StatType,
+		float Delta,
+		float& NewValue,
+		bool& bSuccess
+	);
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
+	meta=(
+		DisplayName="List All Achievement API Names",
+		ToolTip="Returns all achievement API identifiers defined for this app (requires a successful Request Current Stats earlier this session).",
+		Keywords="steam achievements list all api names ids schema"
+	))
+	static void ListAllAchievementAPINames(TArray<FString>& AchievementAPINames, bool& bSuccess);
+
 	
 };

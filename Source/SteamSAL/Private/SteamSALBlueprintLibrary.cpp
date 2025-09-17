@@ -682,8 +682,112 @@ void USteamSALBlueprintLibrary::GetGlobalStatHistory(
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStatHistory: Unsupported StatType for '%s'"), *StatAPIName);
 	}
 
+}
+
+void USteamSALBlueprintLibrary::AddToStoredStat(
+    const FString& StatAPIName,
+    ESALStatReadType StatType,
+    float Delta,
+    float& NewValue,
+    bool& bSuccess)
+{
+    bSuccess = false;
+    NewValue = 0.0f;
+	
+    if (SteamUserStats() == nullptr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SteamUserStats unavailable"));
+        return;
+    }
+    if (StatAPIName.IsEmpty())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: Empty StatAPIName"));
+        return;
+    }
+
+    const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
+
+    if (StatType == ESALStatReadType::Integer)
+    {
+        int32 Current = 0;
+        if (!SteamUserStats()->GetStat(AnsiName, &Current))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: GetStat(int) failed for '%s'"), *StatAPIName);
+            return;
+        }
+
+        int32 Updated = Current + static_cast<int32>(Delta);
+        if (!SteamUserStats()->SetStat(AnsiName, Updated))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SetStat(int) failed for '%s' (%d)"), *StatAPIName, Updated);
+            return;
+        }
+
+        NewValue = static_cast<float>(Updated);
+        bSuccess = true;
+    }
+    else if (StatType == ESALStatReadType::Float)
+    {
+        float Current = 0.0f;
+        if (!SteamUserStats()->GetStat(AnsiName, &Current))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: GetStat(float) failed for '%s'"), *StatAPIName);
+            return;
+        }
+
+        float Updated = Current + Delta;
+        if (!SteamUserStats()->SetStat(AnsiName, Updated))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SetStat(float) failed for '%s' (%f)"), *StatAPIName, Updated);
+            return;
+        }
+
+        NewValue = Updated;
+        bSuccess = true;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: Unsupported StatType for '%s' (only Integer/Float allowed)"), *StatAPIName);
+    }
+	
+}
+
+void USteamSALBlueprintLibrary::ListAllAchievementAPINames(
+	TArray<FString>& AchievementAPINames, bool& bSuccess)
+{
+	bSuccess = false;
+	AchievementAPINames.Reset();
+
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] ListAllAchievementAPINames: SteamUserStats unavailable"));
+		return;
+	}
+
+	const int32 Count = SteamUserStats()->GetNumAchievements();
+	if (Count <= 0)
+	{
+		// No achievements defined or schema not loaded yet
+		bSuccess = (Count == 0); // true if empty list is expected
+		return;
+	}
+
+	AchievementAPINames.Reserve(Count);
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		const char* NameAnsi = SteamUserStats()->GetAchievementName(Index);
+		if (NameAnsi && NameAnsi[0] != '\0')
+		{
+			AchievementAPINames.Add(FString(UTF8_TO_TCHAR(NameAnsi)));
+		}
+	}
+
+	bSuccess = true;
 
 }
+
+
+
 
 
 

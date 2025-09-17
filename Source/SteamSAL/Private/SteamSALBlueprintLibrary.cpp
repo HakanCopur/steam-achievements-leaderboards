@@ -565,3 +565,68 @@ void USteamSALBlueprintLibrary::ShowAchievementsOverlay(bool& bSuccess)
 
 }
 
+void USteamSALBlueprintLibrary::GetGlobalStat(
+	const FString& StatAPIName,
+	ESALStatReadType StatType,
+	int64& IntegerValue,
+	double& FloatValue,
+	bool& bSuccess)
+{
+	bSuccess     = false;
+	IntegerValue = 0;
+	FloatValue   = 0.0;
+
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: SteamUserStats unavailable"));
+		return;
+	}
+	if (StatAPIName.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: Empty StatAPIName"));
+		return;
+	}
+
+	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
+
+	switch (StatType)
+	{
+	case ESALStatReadType::Integer:
+		{
+			int64 Val = 0;
+			const bool ok = SteamUserStats()->GetGlobalStat(AnsiName, &Val);
+			if (ok)
+			{
+				IntegerValue = Val;
+				bSuccess = true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: GetGlobalStat(int64) failed for '%s'"), *StatAPIName);
+			}
+			break;
+		}
+	case ESALStatReadType::Float:
+	case ESALStatReadType::Average: // average is read as a floating value
+		{
+			double Val = 0.0;
+			const bool ok = SteamUserStats()->GetGlobalStat(AnsiName, &Val);
+			if (ok)
+			{
+				FloatValue = Val;
+				bSuccess = true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: GetGlobalStat(double) failed for '%s'"), *StatAPIName);
+			}
+			break;
+		}
+	default:
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: Unsupported StatType for '%s'"), *StatAPIName);
+		break;
+	}
+
+}
+
+

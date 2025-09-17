@@ -196,6 +196,20 @@ public:
 		bAlsoResetAchievements="true"
 	))
 	static void ClearUserStats(bool bAlsoResetAchievements, bool& bSuccess);
+	
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Stats",
+	meta=(
+		DisplayName="Get Global Stat (Aggregated)",
+		ToolTip="Reads an aggregated (global) stat cached by Steam. Requires a successful 'Request Global Stats' earlier in the session. Integer returns via IntegerValue; Float/Average via FloatValue.",
+		Keywords="steam stats global aggregated community total average avgrate"
+	))
+	static void GetGlobalStat(
+		const FString& StatAPIName,
+		ESALStatReadType StatType,
+		int64& IntegerValue,
+		double& FloatValue,
+		bool& bSuccess
+	);
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Overlay",
 	meta=(
@@ -204,5 +218,6 @@ public:
 		Keywords="steam overlay achievements open show ui page"
 	))
 	static void ShowAchievementsOverlay(bool& bSuccess);
+	
 	
 };

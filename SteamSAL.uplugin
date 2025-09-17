@@ -1,24 +1,22 @@
 {
-	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "1.0",
-	"FriendlyName": "SteamSAL",
-	"Description": "Easy Steam Achievements & Leaderboards integration for UE5. Blueprint-first, async-driven.",
-	"Category": "Other",
-	"CreatedBy": "UnForge",
-	"CreatedByURL": "dev@hakancopur.com",
-	"DocsURL": "",
-	"MarketplaceURL": "",
-	"SupportURL": "",
-	"CanContainContent": true,
-	"IsBetaVersion": false,
-	"IsExperimentalVersion": false,
-	"Installed": false,
-	"Modules": [
-		{
-			"Name": "SteamSAL",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		}
-	]
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0.0",
+  "FriendlyName": "Steam Achievements & Leaderboards",
+  "Description": "Easy Steam Achievements & Leaderboards for UE5. Blueprint-first, async-driven.",
+  "Category": "Online",
+  "CreatedBy": "UnForge",
+  "CreatedByURL": "https://hakancopur.com",
+  "DocsURL": "https://github.com/UnForgeGames/SteamSAL#readme",
+  "MarketplaceURL": "",
+  "SupportURL": "mailto:dev@hakancopur.com",
+  "CanContainContent": false,
+  "IsBetaVersion": false,
+  "IsExperimentalVersion": false,
+  "EnabledByDefault": false,
+  "Installed": false,
+  "SupportedTargetPlatforms": [ "Win64" ],
+  "Modules": [
+    { "Name": "SteamSAL", "Type": "Runtime", "LoadingPhase": "Default" }
+  ]
 }

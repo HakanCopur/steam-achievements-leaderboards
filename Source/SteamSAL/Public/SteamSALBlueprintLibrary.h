@@ -102,12 +102,11 @@ public:
 	static FString GetAchievementAPIName(int32 AchievementIndex);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
-		meta=(
-			DisplayName="Get Achievement Icon",
-			ToolTip="Retrieves the Steam-provided icon (as a texture) for the given achievement.",
-			Keywords="steam achievement icon texture image"
-		))
+	meta=(DisplayName="Get Achievement Icon",
+		  ReturnDisplayName="Icon Texture",
+		  ToolTip="Retrieves the Steam-provided icon (locked or unlocked) for the given achievement."))
 	static UTexture2D* GetAchievementIcon(const FString& AchievementAPIName, bool bUnlockedIcon);
+
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
 		meta=(
@@ -198,5 +197,12 @@ public:
 	))
 	static void ClearUserStats(bool bAlsoResetAchievements, bool& bSuccess);
 
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Overlay",
+	meta=(
+		DisplayName="Show Achievements Overlay",
+		ToolTip="Opens the Steam overlay to this game's Achievements page. Requires Steam overlay enabled and running under Steam.",
+		Keywords="steam overlay achievements open show ui page"
+	))
+	static void ShowAchievementsOverlay(bool& bSuccess);
 	
 };

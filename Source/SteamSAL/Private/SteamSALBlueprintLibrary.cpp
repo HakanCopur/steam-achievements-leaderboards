@@ -179,9 +179,6 @@ FString USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex)
 	return Name ? FString(ANSI_TO_TCHAR(Name)) : FString();
 }
 
-#include "Engine/Texture2D.h"
-#include "Rendering/Texture2DResource.h"
-#include "HAL/UnrealMemory.h"
 
 UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& AchievementAPIName, bool bUnlockedIcon)
 {
@@ -543,6 +540,28 @@ void USteamSALBlueprintLibrary::ClearUserStats(bool bAlsoResetAchievements, bool
     }
 	
     bSuccess = true;
+	
+}
+
+void USteamSALBlueprintLibrary::ShowAchievementsOverlay(bool& bSuccess)
+{
+	bSuccess = false;
+
+	if (!SteamUtils() || !SteamFriends())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] ShowAchievementsOverlay: Steam interfaces unavailable"));
+		return;
+	}
+
+	if (!SteamUtils()->IsOverlayEnabled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] ShowAchievementsOverlay: Steam overlay is disabled"));
+		return;
+	}
+
+	// Opens the overlay to the Achievements page of the current app.
+	SteamFriends()->ActivateGameOverlay("Achievements");
+	bSuccess = true;
 
 }
 

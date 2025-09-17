@@ -178,7 +178,6 @@ public:
 		bool& bSuccess
 	);
 
-	// --- Batch stat write, array form (uses FSAL_StatWrite per entry) ---
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
 		meta=(
 			DisplayName="Set Stored Stats (Batch)",
@@ -189,4 +188,15 @@ public:
 		const TArray<FSAL_StatWrite>& StatsToSet,
 		bool& bAllSucceeded
 	);
+
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Stats",
+	meta=(
+		DisplayName="Clear User Stats And Achievements",
+		ToolTip="Resets ALL user stats to their default values. Optionally also clear ALL achievements. Call 'Store Stats & Achievements (Async)' afterwards to persist; then call 'Request Current Stats' to refresh cache.",
+		Keywords="steam stats reset clear wipe defaults achievements dev testing danger",
+		bAlsoResetAchievements="true"
+	))
+	static void ClearUserStats(bool bAlsoResetAchievements, bool& bSuccess);
+
+	
 };

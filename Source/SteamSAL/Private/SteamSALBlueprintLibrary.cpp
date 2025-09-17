@@ -523,3 +523,26 @@ void USteamSALBlueprintLibrary::SetStoredStats(
 	
 }
 
+void USteamSALBlueprintLibrary::ClearUserStats(bool bAlsoResetAchievements, bool& bSuccess)
+{
+    bSuccess = false;
+
+
+    if (SteamUserStats() == nullptr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SAL] ClearUserStats: SteamUserStats unavailable"));
+        return;
+    }
+
+    const bool ok = SteamUserStats()->ResetAllStats(bAlsoResetAchievements);
+    if (!ok)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SAL] ClearUserStats: ResetAllStats(%s) returned false"),
+            bAlsoResetAchievements ? TEXT("true") : TEXT("false"));
+        return;
+    }
+	
+    bSuccess = true;
+
+}
+

@@ -10,36 +10,44 @@
 </p>
 
 ## **Table of Contents**
-- [**Table of Contents**](#table-of-contents)
 - [**About**](#about)
 - [**Features**](#features)
 - [**Compatibility**](#compatibility)
 - [**Install**](#install)
 - [**Enable Steam Online Subsystem (Required)**](#enable-steam-online-subsystem-required)
-- [**Quick Start (Leaderboards)**](#quick-start-leaderboards)
-- [**Blueprint Nodes Overview**](#blueprint-nodes-overview)
+- [**Quick Start — Leaderboards**](#quick-start-leaderboards)
+- [**Quick Start — Achievements & Stats**](#quick-start-achievements--stats)
+- [**Blueprint Nodes Overview (Highlights)**](#blueprint-nodes-overview-highlights)
 - [**Troubleshooting**](#troubleshooting)
 - [**License**](#license)
 
 ---
 
 ## **About**
-**SteamSAL** is a lightweight Unreal Engine 5 plugin that exposes **Steam Leaderboards (and Achievements)** through simple **async Blueprint** nodes—ideal for solo devs and small teams who want the essentials of Steamworks without writing C++.
+**SteamSAL** is a lightweight Unreal Engine 5 plugin that exposes **Steam Leaderboards, Achievements, and Stats** through simple **async Blueprint** nodes—ideal for solo devs and small teams who want the essentials of Steamworks without writing C++.
 
 ---
 
 ## **Features**
-- 🔎 **Find / Create** leaderboards  
-- ⬆️ **Upload** scores (Keep Best / Force Update) with optional `Details[]`  
-- ⬇️ **Download** entries (Global, Friends, Around User, For Users)  
-- 🧩 **Break** rows to SteamID, Rank, Score, Details[], Player Name  
-- 🧰 Helpers: `IsSteamAvailable`, `GetSteamID`, `Get Leaderboard Name / Sort / Display / Entry Count`
+### **Leaderboards**
+- 🔎 **Find / Create** leaderboards
+- ⬆️ **Upload** scores (Keep Best / Force Update) with optional `Details[]`
+- ⬇️ **Download** entries (Global, Friends, Around User, For Users)
+- 🧩 **Break** rows → SteamID, Global Rank, Score, Details[], Player Name
+- 🧰 Helpers for name, sort, display, and entry count
+
+### **Achievements & Stats**
+- 🚀 **Request Current Stats & Achievements** (async) at startup
+- 🏆 **Unlock / Clear** achievements; **Indicate Achievement Progress** (toast/progress)
+- 📊 **Local (cached) stats**: Set / Add / Batch write → then **Store** to persist
+- 🌎 **Global stats**: Request N-day history, aggregate & time-series queries
+- 🎛️ UI helpers: **Show Achievements Overlay**, list achievement API names, get display name/icon
 
 ---
 
 ## **Compatibility**
-- **Engine:** UE **5.0 → 5.4**  
-- **Platform:** **Win64** (others not officially tested)  
+- **Engine:** UE **5.0 → 5.4**
+- **Platform:** **Win64** (others not officially tested)
 - **Plugin Type:** **Runtime** (no content)
 
 ---
@@ -51,8 +59,7 @@
      - `Engine/Plugins/Marketplace/SteamSAL`
 2. **Enable the plugin**
    - In **Editor → Edit → Plugins**, search **SteamSAL** and enable it. Restart if prompted.
-3. **Enable Steam Online Subsystem**  
-   - Required. See next section.
+3. **Enable Steam Online Subsystem** — required (see next section).
 
 ---
 
@@ -86,48 +93,73 @@ NetConnectionClassName="/Script/OnlineSubsystemSteam.SteamNetConnection"
 
 ---
 
-## **Quick Start (Leaderboards)**
-1. Call **`Is Steam Available`** → proceed only if `true`.  
-2. **`Find Steam Leaderboard`** (or **`Create Steam Leaderboard`**) → keep the returned **Leaderboard Handle**.  
-3. **`Upload Steam Leaderboard Score`** → send your score (and optional `Details[]`).  
-4. **`Get Steam Leaderboard Entries`** → choose **Global / Friends / Around User / For Users**.  
+## **Quick Start — Leaderboards**
+1. Call **`Is Steam Available`** → proceed only if `true`.
+2. **`Find Steam Leaderboard`** (or **`Create Steam Leaderboard`**) → cache the **Leaderboard Handle**.
+3. **`Upload Steam Leaderboard Score`** → send your score (+ optional `Details[]`).
+4. **`Get Steam Leaderboard Entries`** → pick **Global / Friends / Around User / For Users**.
 5. For each entry, **`Break SAL_LeaderboardEntryRow`** → `SteamID`, `GlobalRank`, `Score`, `Details[]`, `PlayerName`.
 
 ---
 
-## **Blueprint Nodes Overview**
-**Async**
-- `Find Steam Leaderboard` → `OnSuccess(LeaderboardHandle)` / `OnFailure`  
-- `Create Steam Leaderboard` → `OnSuccess(LeaderboardHandle)` / `OnFailure`  
-- `Upload Steam Leaderboard Score` *(Keep Best / Force Update, optional Details[])* → `OnSuccess` / `OnFailure`  
-- `Get Steam Leaderboard Entries` *(Global, Friends, Around User, RangeStart/End, DetailsMax)*  
-- `Get Steam Leaderboard Entries (Users)` *(SteamIDs array)*
+## **Quick Start — Achievements & Stats**
+> Achievements rely on Steam **stats** under the hood. Read/update stats locally, then **Store** to persist to Steam.
 
-**Struct**
-- `SAL_LeaderboardEntryRow` → `SteamID`, `GlobalRank`, `Score`, `Details[]`, `PlayerName`
+1. **Initialize**
+   - Call **`Request Current Stats And Achievements`** (async) on game start; wait for `On Success`.
+2. **Unlock an Achievement**
+   - Call **`Set Achievement (Unlock)`** with the `Achievement APIName`.
+   - Call **`Store User Stats And Achievements`** to persist.
+3. **Show Progress (incremental achievements)**
+   - Option A: Call **`Indicate Achievement Progress`** with `Current Progress` + `Max Progress` (shows Steam toast).
+   - Option B: Update a numeric stat with **`Set Local (Cached) Stat`** or **`Add To Local (Cached) Stat`** (e.g., `ST_JUMPS`), then **`Store User Stats And Achievements`**. Drive unlock logic from your stat thresholds.
+4. **UI / Overlay**
+   - Call **`Show Achievements Overlay`** to open Steam’s achievements page.
 
-**Helpers**
-- `Is Steam Available` (bool)  
-- `Get SteamID` (from `PlayerController`)  
+**Common pure helpers you can use right away:**
+- `Get Achievement API Names` (list)  
+- `Get Achievement Display Name` (localized)  
+- `Get Achievement Icon` (texture)  
+- `Get Global Achievement Percent`  
+- `Get Local (Cached) Stat` / `Get Global Stat (Aggregated)` / `Get Global Stat History`
+
+---
+
+## **Blueprint Nodes Overview (Highlights)**
+### **Async**
+- **Leaderboards:** `Find Steam Leaderboard`, `Create Steam Leaderboard`, `Upload Steam Leaderboard Score`, `Get Steam Leaderboard Entries`, `Get Steam Leaderboard Entries (Users)`
+- **Achievements/Stats:** `Request Current Stats And Achievements`, `Store User Stats And Achievements`, `Request Global Stats`
+- **UI:** `Show Achievements Overlay`
+
+### **Pure / Helpers (5+ practical calls)**
+- `Is Steam Available`, `Get SteamID`
+- `Get Achievement API Names`, `Get Achievement Display Name`, `Get Achievement Icon`, `Get Global Achievement Percent`
+- `Get Local (Cached) Stat`, `Get Global Stat (Aggregated)`, `Get Global Stat History`
 - `Get Leaderboard Name / Sort Method / Display Type / Entry Count`
+- Struct makers: `Make SteamStat`, `Make SAL_StatWrite` (for batch/local writes)
 
 ---
 
 ## **Troubleshooting**
 **`IsSteamAvailable = false`**
-- Steam client closed  
-- `DefaultPlatformService` not set to `Steam`  
-- Online Subsystem Steam plugin disabled  
+- Steam client closed
+- `DefaultPlatformService` not set to `Steam`
+- Online Subsystem Steam plugin disabled
 - `steam_appid.txt` missing or misplaced
 
 **Uploaded but not visible**
-- Verify you reuse the **same Leaderboard Handle** when downloading  
-- Check **Upload Method** (Keep Best vs Force Update)  
-- Confirm in Steam overlay (View → Games → View Game Details)
+- Reuse the same **Leaderboard Handle** when downloading
+- Check **Upload Method** (Keep Best vs Force Update)
+- Validate via Steam overlay (View → Games → View Game Details)
+
+**Achievements not unlocking**
+- Ensure you called **Request Current Stats And Achievements** before writing
+- Call **Store User Stats And Achievements** after updates
+- Verify the `Achievement APIName` matches your Steamworks configuration
 
 **Friends / Around User empty**
-- No prior submissions or Steam privacy/friend filters  
-- Test with **Global** first to validate setup
+- No prior submissions, privacy, or friend visibility
+- Test **Global** first to validate setup
 
 ---
 

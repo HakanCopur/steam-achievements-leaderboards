@@ -5,7 +5,7 @@
 
 USAL_UploadScore* USAL_UploadScore::UploadScore(const UObject* WorldContextObject,
                                                 FSAL_LeaderboardHandle LeaderboardHandle,
-                                                int32 InScore, ESALLeaderboardUploadMethod InMethod,
+                                                int32 InScore, ESALLeaderboardUploadMethod UploadMethod,
                                                 const TArray<int32>& Details)
 {
 	USAL_UploadScore* Node = NewObject<USAL_UploadScore>();
@@ -15,7 +15,7 @@ USAL_UploadScore* USAL_UploadScore::UploadScore(const UObject* WorldContextObjec
 	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
 	Node->LeaderboardHandle = LeaderboardHandle;
 	Node->Score = InScore;
-	Node->UploadMethod = InMethod;
+	Node->UploadMethod = UploadMethod;
 	Node->InDetails  = Details;  
 
 

@@ -71,7 +71,7 @@ public:
 			,
 			Keywords="steam achievement unlock set add complete"
 		))
-	static bool SetAchievement(const FString& AchievementAPIName);
+	static void SetAchievement(const FString& AchievementAPIName, bool& bSuccess);
 
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Achievements",
 		meta=(
@@ -81,7 +81,7 @@ public:
 			,
 			Keywords="steam achievement reset clear remove revoke"
 		))
-	static bool ClearAchievement(const FString& AchievementAPIName);
+	static void ClearAchievement(const FString& AchievementAPIName, bool& bSuccess);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
 		meta=(
@@ -99,7 +99,7 @@ public:
 			ToolTip="Returns the API (backend) identifier string for the specified achievement index.",
 			Keywords="steam achievement api id backend name"
 		))
-	static FString GetAchievementAPIName(int32 AchievementIndex);
+	static void GetAchievementAPIName(int32 AchievementIndex, FString& APIName, bool& bSuccess);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Achievements",
 		meta=(

@@ -131,20 +131,24 @@ ESALLeaderboardDisplayType USteamSALBlueprintLibrary::GetLeaderboardDisplayType(
 	return ESALLeaderboardDisplayType::Numeric;
 }
 
-bool USteamSALBlueprintLibrary::SetAchievement(const FString& AchievementAPIName)
+void USteamSALBlueprintLibrary::SetAchievement(const FString& AchievementAPIName, bool& bSuccess)
 {
+    bSuccess = false;
+	
 	if (!SteamUserStats())
-		return false;
+		return;
 
-	return SteamUserStats()->SetAchievement(TCHAR_TO_ANSI(*AchievementAPIName));
+	bSuccess = SteamUserStats()->SetAchievement(TCHAR_TO_ANSI(*AchievementAPIName));
 }
 
-bool USteamSALBlueprintLibrary::ClearAchievement(const FString& AchievementAPIName)
+void USteamSALBlueprintLibrary::ClearAchievement(const FString& AchievementAPIName, bool& bSuccess)
 {
+	bSuccess = false;
+	
 	if (!SteamUserStats())
-		return false;
+		return;
 
-	return SteamUserStats()->ClearAchievement(TCHAR_TO_ANSI(*AchievementAPIName));
+	bSuccess = SteamUserStats()->ClearAchievement(TCHAR_TO_ANSI(*AchievementAPIName));
 }
 
 void USteamSALBlueprintLibrary::GetAchievementStatus(const FString& AchievementAPIName, bool& bUnlocked,
@@ -156,7 +160,7 @@ void USteamSALBlueprintLibrary::GetAchievementStatus(const FString& AchievementA
 
 	if (!SteamUserStats())
 	{
-		return; // Steam not available
+		return; 
 	}
 
 	uint32 UnlockTime = 0;
@@ -168,15 +172,18 @@ void USteamSALBlueprintLibrary::GetAchievementStatus(const FString& AchievementA
 }
 
 
-FString USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex)
+void USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex, FString& APIName, bool& bSuccess)
 {
+	APIName = {};
+	bSuccess = false;
+	
 	if (!SteamUserStats())
 	{
-		return FString();
+		return;
 	}
-
-	const char* Name = SteamUserStats()->GetAchievementName(AchievementIndex);
-	return Name ? FString(ANSI_TO_TCHAR(Name)) : FString();
+	
+	APIName = SteamUserStats()->GetAchievementName(AchievementIndex);
+	bSuccess = true;
 }
 
 

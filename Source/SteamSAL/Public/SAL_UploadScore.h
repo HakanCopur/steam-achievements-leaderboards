@@ -32,7 +32,7 @@ public:
 		const UObject* WorldContextObject,
 		FSAL_LeaderboardHandle LeaderboardHandle,
 		int32 Score,
-		ESALLeaderboardUploadMethod InMethod,
+		ESALLeaderboardUploadMethod UploadMethod,
 		const TArray<int32>& Details);
 
 	UPROPERTY(BlueprintAssignable)

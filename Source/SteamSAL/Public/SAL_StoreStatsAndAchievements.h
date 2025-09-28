@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 #pragma once
 
@@ -34,9 +34,8 @@ public:
 	
 private:
 	UPROPERTY() UObject* WorldContextObject = nullptr;
-	bool bCompleted = false; // ensure single success
+	bool bCompleted = false;
 
-	// Steam manual callbacks (StoreStats has no SteamAPICall_t; we listen for these)
 	STEAM_CALLBACK_MANUAL(USAL_StoreStatsAndAchievements, OnUserStatsStored,        UserStatsStored_t,        UserStatsStoredCb);
 	STEAM_CALLBACK_MANUAL(USAL_StoreStatsAndAchievements, OnUserAchievementStored,  UserAchievementStored_t,  UserAchievementStoredCb);
 

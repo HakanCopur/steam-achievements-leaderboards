@@ -1,7 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 
 #include "SAL_StoreStatsAndAchievements.h"
+#include "Async/Async.h"
+#include "Async/TaskGraphInterfaces.h"
+
 
 USAL_StoreStatsAndAchievements* USAL_StoreStatsAndAchievements::StoreUserStatsAndAchievements(
 	const UObject* WorldContextObject)

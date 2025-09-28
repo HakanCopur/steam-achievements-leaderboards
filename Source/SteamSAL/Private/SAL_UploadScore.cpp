@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 
 #include "SAL_UploadScore.h"
@@ -32,8 +32,6 @@ void USAL_UploadScore::Activate()
 		return;
 	}
 
-	//Validate Steam availability before doing anything async
-	//SteamUserStats() is nullptr when Steam API isn't initialized/available.
 	if (SteamUserStats() == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] UploadScore: SteamUserStats not available"));
@@ -74,7 +72,6 @@ void USAL_UploadScore::Activate()
 
 void USAL_UploadScore::OnUploadCompleted(LeaderboardScoreUploaded_t* Result, bool bIOFailure)
 {
-	// 1) transport-level failure or null result
 	if (bIOFailure || Result == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[SAL] UploadScore: IO failure or null result"));
@@ -83,7 +80,6 @@ void USAL_UploadScore::OnUploadCompleted(LeaderboardScoreUploaded_t* Result, boo
 		return;
 	}
 
-	// 2) logical failure returned by Steam
 	if (Result->m_bSuccess == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] UploadScore: Steam reported upload failure (Score=%d)"), Result->m_nScore);
@@ -92,7 +88,6 @@ void USAL_UploadScore::OnUploadCompleted(LeaderboardScoreUploaded_t* Result, boo
 		return;
 	}
 
-	// 3) optional: warn if callback handle doesn't match our cached handle
 	const SteamLeaderboard_t Expected = static_cast<SteamLeaderboard_t>(LeaderboardHandle.Value);
 	if (Result->m_hSteamLeaderboard != Expected)
 	{
@@ -101,7 +96,6 @@ void USAL_UploadScore::OnUploadCompleted(LeaderboardScoreUploaded_t* Result, boo
 		       static_cast<unsigned long long>(Result->m_hSteamLeaderboard));
 	}
 
-	// 4) success: extract fields and broadcast
 	const bool bScoreChanged = (Result->m_bScoreChanged != 0);
 	const int32 NewGlobalRank = Result->m_nGlobalRankNew;
 	const int32 PreviousGlobalRank = Result->m_nGlobalRankPrevious;
@@ -113,6 +107,5 @@ void USAL_UploadScore::OnUploadCompleted(LeaderboardScoreUploaded_t* Result, boo
 
 	OnSuccess.Broadcast();
 
-	// 5) we're done; allow GC to clean up the proxy
 	SetReadyToDestroy();
 }

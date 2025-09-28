@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 #pragma once
 
@@ -22,7 +22,7 @@ class STEAMSAL_API USAL_DownloadLeaderboardEntries : public UBlueprintAsyncActio
 	GENERATED_BODY()
 
 public:
-	// Factory function (we'll add the signature next step)
+
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Leaderboard",
 		meta=(WorldContext="WorldContextObject",
 			BlueprintInternalUseOnly="true",

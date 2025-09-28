@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 
 #include "SAL_DownloadLeaderboardEntries.h"
@@ -24,7 +24,6 @@ USAL_DownloadLeaderboardEntries* USAL_DownloadLeaderboardEntries::DownloadLeader
 
 void USAL_DownloadLeaderboardEntries::Activate()
 {
-	// 1) Validate leaderboard handle
 	if (InHandle.Value == 0)
 	{
 		UE_LOG(LogTemp, Warning,
@@ -35,7 +34,6 @@ void USAL_DownloadLeaderboardEntries::Activate()
 		return;
 	}
 
-	// 2) Validate Steam availability (follow same pattern as FindLeaderboard)
 	if (SteamUserStats() == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: SteamUserStats not available"));
@@ -43,7 +41,6 @@ void USAL_DownloadLeaderboardEntries::Activate()
 		return;
 	}
 
-	// 3) Validate range (Friends ignores range)
 	if (InRequestType != ELeaderboardRequestType::Friends && InRangeEnd < InRangeStart)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: Bad range [%d..%d]"), InRangeStart,
@@ -52,7 +49,6 @@ void USAL_DownloadLeaderboardEntries::Activate()
 		return;
 	}
 
-	// 4) Validate details
 	if (InDetailsMax < 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: DetailsMax cannot be negative"));
@@ -60,10 +56,8 @@ void USAL_DownloadLeaderboardEntries::Activate()
 		return;
 	}
 
-	// We'll issue the actual Steam call in the next step.
 	UE_LOG(LogTemp, Verbose, TEXT("[SAL] DownloadLeaderboardEntries: inputs valid; ready to issue Steam call"));
 
-	// --- Map your request type to Steam's ---
 	ELeaderboardDataRequest DataReq = k_ELeaderboardDataRequestGlobal;
 	switch (InRequestType)
 	{
@@ -77,10 +71,8 @@ void USAL_DownloadLeaderboardEntries::Activate()
 		break;
 	}
 
-	// --- Convert your wrapped handle back to Steam's type ---
 	const SteamLeaderboard_t SteamHandle = static_cast<SteamLeaderboard_t>(InHandle.Value);
 
-	// --- Kick off the async request (non-blocking) ---
 	const int32 Start = InRequestType == ELeaderboardRequestType::Friends ? 0 : InRangeStart;
 	const int32 End = InRequestType == ELeaderboardRequestType::Friends ? 0 : InRangeEnd;
 
@@ -98,7 +90,6 @@ void USAL_DownloadLeaderboardEntries::Activate()
 		return;
 	}
 
-	// --- Bind the completion function like in FindLeaderboard ---
 	CallResult.Set(Call, this, &USAL_DownloadLeaderboardEntries::OnScoresDownloaded);
 
 	UE_LOG(LogTemp, Verbose, TEXT("[SAL] DownloadLeaderboardEntries: request sent (Type=%d, %d..%d)"),
@@ -120,7 +111,6 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
         return;
     }
 
-    // Clamp once up front (or do this in Activate())
     InDetailsMax = FMath::Clamp(InDetailsMax, 0, 64);
 
     if (Callback->m_cEntryCount <= 0)
@@ -144,7 +134,6 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
     {
         LeaderboardEntry_t Entry;
 
-        // Prepare optional details buffer
         TArray<int32> DetailsTmp;
         int32* DetailsPtr = nullptr;
         if (InDetailsMax > 0)
@@ -177,7 +166,6 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
     		const char* Persona = SteamFriends()->GetFriendPersonaName(Entry.m_steamIDUser);
     		Row.PlayerName = Persona ? UTF8_TO_TCHAR(Persona) : TEXT("");
 
-    		// Optional: if name isn’t cached yet, request it so it becomes available soon.
     		if (Row.PlayerName.IsEmpty())
     		{
     			SteamFriends()->RequestUserInformation(Entry.m_steamIDUser, true);
@@ -187,7 +175,7 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
         if (InDetailsMax > 0)
         {
             const int32 Actual = FMath::Min(Entry.m_cDetails, InDetailsMax);
-            DetailsTmp.SetNum(Actual, /*bAllowShrinking=*/false);
+			DetailsTmp.SetNum(Actual, EAllowShrinking::No);
             Row.Details = MoveTemp(DetailsTmp);
         }
 

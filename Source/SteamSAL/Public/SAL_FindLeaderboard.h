@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 #pragma once
 
@@ -42,7 +42,7 @@ public :
 private:
 	
 	UPROPERTY()
-	UObject* WorldContextObject = nullptr; // UPROPERTY so GC keeps it alive
+	UObject* WorldContextObject = nullptr;
 	FString InLeaderboardName;
 	CCallResult<USAL_FindLeaderboard, LeaderboardFindResult_t> FindLeaderboardCallResult;
 	

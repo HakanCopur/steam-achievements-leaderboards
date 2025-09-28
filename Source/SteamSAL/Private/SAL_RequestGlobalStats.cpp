@@ -1,11 +1,12 @@
-// SAL_RequestGlobalStats.cpp
+// Copyright (c) 2025 UnForge. All rights reserved.
+
 
 #include "SAL_RequestGlobalStats.h"
 
 USAL_RequestGlobalStats* USAL_RequestGlobalStats::RequestGlobalStats(int32 Days)
 {
 	USAL_RequestGlobalStats* Node = NewObject<USAL_RequestGlobalStats>();
-	Node->RequestedDays = FMath::Max(0, Days); // 0 = all-time per Steam docs
+	Node->RequestedDays = FMath::Max(0, Days);
 	return Node;
 }
 

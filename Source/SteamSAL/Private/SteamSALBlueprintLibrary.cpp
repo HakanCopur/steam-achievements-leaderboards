@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 
 #include "SteamSALBlueprintLibrary.h"
@@ -6,6 +6,10 @@
 #include "GameFramework/PlayerState.h"
 #include "OnlineSubsystem.h"
 #include "SALTypes.h"
+#include "Engine/Texture2D.h"        
+#include "PixelFormat.h"             
+#include "Serialization/BulkData.h"  
+#include "TextureResource.h" 
 
 THIRD_PARTY_INCLUDES_START
 #include "steam/steam_api.h"
@@ -15,14 +19,12 @@ DEFINE_LOG_CATEGORY_STATIC(LogSteamSAL, Log, All);
 
 bool USteamSALBlueprintLibrary::IsSteamAvailable(const UObject* WorldContextObject)
 {
-	// World context sanity
 	if (!WorldContextObject || !WorldContextObject->GetWorld())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL_IsSteamAvailable] WorldContextObject/World is null"));
 		return false;
 	}
 
-	// Gather Steam interface state
 	const bool bHasUser = (SteamUser() != nullptr);
 	const bool bHasUserStats = (SteamUserStats() != nullptr);
 	const bool bHasUtils = (SteamUtils() != nullptr);
@@ -30,17 +32,11 @@ bool USteamSALBlueprintLibrary::IsSteamAvailable(const UObject* WorldContextObje
 	const uint32 AppID = SteamUtils() ? SteamUtils()->GetAppID() : 0;
 	const bool bLoggedOn = SteamUser() ? SteamUser()->BLoggedOn() : false;
 
-	// (Optional) See which Online Subsystem is active; don't gate on it, just log for clarity
 	const IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
 	const FString OSSName = OSS ? OSS->GetSubsystemName().ToString() : TEXT("<null>");
 
-	// Decide availability:
-	// - Interfaces must exist
-	// - AppID must be non-zero
-	// - Logged-on is nice to have; if you want to allow offline testing, you can drop this from the AND chain
 	const bool bAvailable = bHasUser && bHasUserStats && bHasUtils && (AppID != 0) && bLoggedOn;
 
-	// Helpful logs
 	UE_LOG(LogTemp, Log, TEXT("[SAL_IsSteamAvailable] IsSteamAvailable() = %s"),
 	       bAvailable ? TEXT("true") : TEXT("false"));
 	UE_LOG(LogTemp, Log, TEXT("[SAL_IsSteamAvailable] OSS=%s  AppID=%u  SteamUserStats=%s  SteamUser=%s  LoggedOn=%s"),
@@ -189,48 +185,60 @@ void USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex, FS
 
 UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& AchievementAPIName)
 {
-	if (!SteamUserStats() || !SteamUtils())
+
+
+	if (SteamUserStats() == nullptr || SteamUtils() == nullptr)
 	{
 		return nullptr;
 	}
 
-	int IconHandle = SteamUserStats()->GetAchievementIcon(TCHAR_TO_ANSI(*AchievementAPIName));
-	if (IconHandle == 0)
+	const FTCHARToUTF8 AnsiName(*AchievementAPIName);
+	const int ImageHandle = SteamUserStats()->GetAchievementIcon(AnsiName.Get());
+	if (ImageHandle == 0)
 	{
 		return nullptr;
 	}
 
-	uint32 Width, Height;
-	if (!SteamUtils()->GetImageSize(IconHandle, &Width, &Height) || Width == 0 || Height == 0)
+	uint32 Width = 0, Height = 0;
+	if (!SteamUtils()->GetImageSize(ImageHandle, &Width, &Height) || Width == 0 || Height == 0)
 	{
 		return nullptr;
 	}
 
-	TArray<uint8> RawData;
-	RawData.SetNumUninitialized(Width * Height * 4);
-
-	if (!SteamUtils()->GetImageRGBA(IconHandle, RawData.GetData(), RawData.Num()))
+	TArray<uint8> RGBA;
+	RGBA.SetNumUninitialized(Width * Height * 4);
+	if (!SteamUtils()->GetImageRGBA(ImageHandle, RGBA.GetData(), RGBA.Num()))
 	{
 		return nullptr;
 	}
 
-	// Create texture
-	UTexture2D* Texture = UTexture2D::CreateTransient(Width, Height, PF_R8G8B8A8);
-	if (!Texture)
+	UTexture2D* Texture = UTexture2D::CreateTransient(static_cast<int32>(Width), static_cast<int32>(Height), EPixelFormat::PF_R8G8B8A8);
+	if (!Texture || !Texture->GetPlatformData() || Texture->GetPlatformData()->Mips.Num() == 0)
 	{
 		return nullptr;
 	}
 
-	// Lock & copy data
-	void* TextureData = Texture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-	FMemory::Memcpy(TextureData, RawData.GetData(), RawData.Num());
-	Texture->GetPlatformData()->Mips[0].BulkData.Unlock();
+	FTexture2DMipMap& Mip = Texture->GetPlatformData()->Mips[0];
+	void* DataPtr = Mip.BulkData.Lock(EBulkDataLockFlags::LOCK_READ_WRITE);
+	if (!DataPtr)
+	{
+		return nullptr;
+	}
 
-	// Update resource
+	const SIZE_T ExpectedSize = static_cast<SIZE_T>(Width) * static_cast<SIZE_T>(Height) * 4;
+	check(Mip.BulkData.GetBulkDataSize() == ExpectedSize); // sanity for dev builds
+
+	FMemory::Memcpy(DataPtr, RGBA.GetData(), ExpectedSize);
+	Mip.BulkData.Unlock();
+
+	Texture->SRGB = true;
+	Texture->CompressionSettings = TC_Default;
+	Texture->Filter = TF_Default;
 	Texture->UpdateResource();
 
 	return Texture;
 }
+
 
 void USteamSALBlueprintLibrary::GetAchievementDisplayInfo(const FString& AchievementAPIName, FString& DisplayName,
                                                           FString& Description, bool& bSuccess)
@@ -307,14 +315,11 @@ void USteamSALBlueprintLibrary::IndicateAchievementProgress(FName AchievementAPI
 	const FString NameStr = AchievementAPIName.ToString();
 	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*NameStr);
 
-	// Clamp progress values
 	uint32 Cur = static_cast<uint32>(FMath::Clamp(CurrentProgress, 0, MaxProgress));
 	uint32 Max = static_cast<uint32>(MaxProgress);
 
-	// Show progress toast
 	bool bIndicated = SteamUserStats()->IndicateAchievementProgress(AnsiName, Cur, Max);
 
-	// Auto-unlock when complete
 	if (bIndicated && Cur >= Max)
 	{
 		bool bUnlocked = false;
@@ -340,7 +345,7 @@ void USteamSALBlueprintLibrary::GetStoredStat(const FString& StatAPIName, ESALSt
 
 	if (!SteamUserStats())
 	{
-		return; // Steam not available (ensure Steam + RequestCurrentStats succeeded first)
+		return; 
 	}
 
 	const char* NameAnsi = TCHAR_TO_ANSI(*StatAPIName);
@@ -358,7 +363,7 @@ void USteamSALBlueprintLibrary::GetStoredStat(const FString& StatAPIName, ESALSt
 			break;
 		}
 	case ESALStatReadType::Float:
-	case ESALStatReadType::Average: // average-rate stats are retrieved as float
+	case ESALStatReadType::Average:
 		{
 			float Tmp = 0.0f;
 			if (SteamUserStats()->GetStat(NameAnsi, &Tmp))
@@ -381,7 +386,7 @@ void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& Sta
 
 	if (!SteamUserStats())
 	{
-		return; // Steam not available. Make sure Request Current Stats succeeded earlier.
+		return;
 	}
 
 	StatsOut.Reserve(StatsToGet.Num());
@@ -393,7 +398,6 @@ void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& Sta
 		Out.APIStatName = Q.APIStatName;
 		Out.FriendlyStatName = Q.FriendlyStatName.IsEmpty() ? Q.APIStatName : Q.FriendlyStatName;
 
-		// Treat Average as Float (if you kept it in your enum)
 		Out.StatType = (Q.StatType == ESALStatReadType::Average) ? ESALStatReadType::Float : Q.StatType;
 
 		const char* NameAnsi = TCHAR_TO_ANSI(*Q.APIStatName);
@@ -405,7 +409,7 @@ void USteamSALBlueprintLibrary::GetStoredStats(const TArray<FSAL_StatQuery>& Sta
 			Ok = SteamUserStats()->GetStat(NameAnsi, &V);
 			if (Ok) { Out.IntegerValue = V; }
 		}
-		else // Float (and Average treated as Float)
+		else
 		{
 			float V = 0.0f;
 			Ok = SteamUserStats()->GetStat(NameAnsi, &V);
@@ -497,7 +501,6 @@ void USteamSALBlueprintLibrary::SetStoredStats(
 
 	if (StatsToSet.Num() == 0)
 	{
-		// Nothing to do; consider it a success
 		bAllSucceeded = true;
 		return;
 	}
@@ -566,7 +569,6 @@ void USteamSALBlueprintLibrary::ShowAchievementsOverlay(bool& bSuccess)
 		return;
 	}
 
-	// Opens the overlay to the Achievements page of the current app.
 	SteamFriends()->ActivateGameOverlay("Achievements");
 	bSuccess = true;
 
@@ -774,8 +776,7 @@ void USteamSALBlueprintLibrary::ListAllAchievementAPINames(
 	const int32 Count = SteamUserStats()->GetNumAchievements();
 	if (Count <= 0)
 	{
-		// No achievements defined or schema not loaded yet
-		bSuccess = (Count == 0); // true if empty list is expected
+		bSuccess = (Count == 0);
 		return;
 	}
 

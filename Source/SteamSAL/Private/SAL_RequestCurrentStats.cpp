@@ -1,8 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 
 #include "SAL_RequestCurrentStats.h"
 #include "OnlineSubsystem.h"
+#include "Async/Async.h"
+#include "Async/TaskGraphInterfaces.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSteamSAL, Log, All);
 

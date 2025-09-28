@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 
 #include "SAL_CreateLeaderboard.h"
@@ -20,7 +20,6 @@ USAL_CreateLeaderboard* USAL_CreateLeaderboard::CreateLeaderboard(const UObject*
 
 void USAL_CreateLeaderboard::Activate()
 {
-	// Basic validation
 	if (InLeaderboardName.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] CreateLeaderboard: LeaderboardName is empty."));
@@ -37,11 +36,9 @@ void USAL_CreateLeaderboard::Activate()
 		return;
 	}
 
-	// Convert name for Steam
 	ANSICHAR NameAnsi[512];
 	FCStringAnsi::Strncpy(NameAnsi, TCHAR_TO_ANSI(*InLeaderboardName), UE_ARRAY_COUNT(NameAnsi));
 
-	// Map plugin enums -> Steam enums
 	ELeaderboardSortMethod SteamSort = k_ELeaderboardSortMethodDescending;
 	switch (InSortMethod)
 	{
@@ -75,7 +72,6 @@ void USAL_CreateLeaderboard::Activate()
 
 void USAL_CreateLeaderboard::OnCreateLeaderboardCompleted(LeaderboardFindResult_t* Result, bool bIOFailure)
 {
-	// Transport error or null result
 	if (bIOFailure || Result == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[SAL] CreateLeaderboard: IO failure or null result"));
@@ -84,7 +80,6 @@ void USAL_CreateLeaderboard::OnCreateLeaderboardCompleted(LeaderboardFindResult_
 		return;
 	}
 
-	// Not found/created (same field used by Find)
 	if (!Result->m_bLeaderboardFound || Result->m_hSteamLeaderboard == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] CreateLeaderboard: '%s' not found/created"), *InLeaderboardName);
@@ -93,7 +88,6 @@ void USAL_CreateLeaderboard::OnCreateLeaderboardCompleted(LeaderboardFindResult_
 		return;
 	}
 
-	// Success
 	FSAL_LeaderboardHandle Handle;
 	Handle.Value = static_cast<int64>(Result->m_hSteamLeaderboard);
 

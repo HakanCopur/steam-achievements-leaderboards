@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2025 UnForge. All rights reserved.
 
 #pragma once
 
@@ -9,7 +9,6 @@ class FSteamSALModule : public IModuleInterface
 {
 public:
 
-	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };

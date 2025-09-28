@@ -6,16 +6,23 @@ public class SteamSAL : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicDependencyModuleNames.AddRange(new string[] {
+        PublicDependencyModuleNames.AddRange(new[] {
             "Core", "CoreUObject", "Engine"
         });
 
-        // Add these *only if* you actually use them in code elsewhere.
-        PrivateDependencyModuleNames.AddRange(new string[] {
-            "OnlineSubsystem"
+        PrivateDependencyModuleNames.AddRange(new[] {
+            "OnlineSubsystem",
         });
 
-        // This is the key line that exposes the Steamworks SDK and links steam_api.
-        AddEngineThirdPartyPrivateStaticDependencies(Target, "Steamworks");
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            // Use Engine’s bundled Steamworks; define a guard for your .cpp files
+            AddEngineThirdPartyPrivateStaticDependencies(Target, "Steamworks");
+            PrivateDefinitions.Add("WITH_STEAMWORKS=1");
+        }
+        else
+        {
+            PrivateDefinitions.Add("WITH_STEAMWORKS=0");
+        }
     }
 }

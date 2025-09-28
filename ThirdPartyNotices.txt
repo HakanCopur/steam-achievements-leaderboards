@@ -1,0 +1,11 @@
+SteamSAL – Third-Party Notices
+
+This plugin uses Valve Corporation’s Steamworks SDK to access achievements, stats, and leaderboards on Steam builds.
+
+Name: Steamworks SDK
+Version: v1.57 (or the version bundled with your installed Unreal Engine)
+Vendor: Valve Corporation
+License: Steamworks SDK Access Agreement (proprietary)
+License URL: https://partner.steamgames.com
+
+No Steamworks SDK source or binaries are redistributed with this plugin. The plugin references the copy bundled with the installed Unreal Engine. A valid Steam AppID and Steamworks configuration are required in the consuming project.

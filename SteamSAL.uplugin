@@ -8,23 +8,32 @@
   "CreatedBy": "UnForge",
   "CreatedByURL": "https://hakancopur.com",
   "DocsURL": "https://hakancopur.github.io/SteamSAL-docs/",
-  "MarketplaceURL": "",
+  "MarketplaceURL": "com.epicgames.launcher://ue/Fab/product/2cf94d29-c41d-4be5-bdb4-377122a92d8d",
   "SupportURL": "mailto:dev@hakancopur.com",
   "Icon": "Resources/Icon128.png",
-
   "CanContainContent": false,
   "IsBetaVersion": false,
   "IsExperimentalVersion": false,
   "EnabledByDefault": false,
   "Installed": false,
-
   "SupportedTargetPlatforms": ["Win64"],
-
+  "EngineVersion": "5.6.0",
   "Modules": [
-    { "Name": "SteamSAL", "Type": "Runtime", "LoadingPhase": "Default" }
+    {
+      "Name": "SteamSAL",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "PlatformAllowList": ["Win64"]
+    }
   ],
-
+  "Plugins": [
+  { "Name": "OnlineSubsystem",      "Enabled": true, "Optional": false },
+  { "Name": "OnlineSubsystemSteam", "Enabled": true, "Optional": true  },
+  { "Name": "OnlineSubsystemUtils", "Enabled": true, "Optional": true  }
+  ],
   "CompatibleEngineVersions": [
-    { "MajorVersion": 5, "MinorVersion": 4 }
+    { "MajorVersion": 5, "MinorVersion": 4 },
+    { "MajorVersion": 5, "MinorVersion": 5 },
+    { "MajorVersion": 5, "MinorVersion": 6 }
   ]
 }

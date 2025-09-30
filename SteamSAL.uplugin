@@ -32,8 +32,12 @@
   { "Name": "OnlineSubsystemUtils", "Enabled": true, "Optional": true  }
   ],
   "CompatibleEngineVersions": [
-    { "MajorVersion": 5, "MinorVersion": 4 },
-    { "MajorVersion": 5, "MinorVersion": 5 },
-    { "MajorVersion": 5, "MinorVersion": 6 }
+  { "MajorVersion": 5, "MinorVersion": 0 },
+  { "MajorVersion": 5, "MinorVersion": 1 },
+  { "MajorVersion": 5, "MinorVersion": 2 },
+  { "MajorVersion": 5, "MinorVersion": 3 },
+  { "MajorVersion": 5, "MinorVersion": 4 },
+  { "MajorVersion": 5, "MinorVersion": 5 },
+  { "MajorVersion": 5, "MinorVersion": 6 }
   ]
 }

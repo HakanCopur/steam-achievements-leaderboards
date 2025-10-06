@@ -7,10 +7,10 @@
 
 
 USAL_StoreStatsAndAchievements* USAL_StoreStatsAndAchievements::StoreUserStatsAndAchievements(
-	const UObject* WorldContextObject)
+	UObject* WorldContextObject)
 {
 	USAL_StoreStatsAndAchievements* Node = NewObject<USAL_StoreStatsAndAchievements>();
-	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
+	Node->WorldContextObject = WorldContextObject;
 	Node->RegisterWithGameInstance(WorldContextObject);
 
 	Node->UserStatsStoredCb.Register(Node, &USAL_StoreStatsAndAchievements::OnUserStatsStored);

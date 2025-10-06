@@ -4,14 +4,14 @@
 #include "SAL_DownloadLeaderboardForUsers.h"
 
 USAL_DownloadLeaderboardForUsers* USAL_DownloadLeaderboardForUsers::DownloadEntriesForUsers(
-	const UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle,
+	UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle,
 	const TArray<FString>& SteamIDs)
 {
 	USAL_DownloadLeaderboardForUsers* Node = NewObject<USAL_DownloadLeaderboardForUsers>();
 
 	Node->RegisterWithGameInstance(WorldContextObject);
 
-	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
+	Node->WorldContextObject = WorldContextObject;
 	Node->InHandle           = LeaderboardHandle;
 	Node->InSteamId64Strings = SteamIDs;
 

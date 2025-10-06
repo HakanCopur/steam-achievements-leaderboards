@@ -28,7 +28,7 @@ public :
 			Keywords="steam leaderboard find search"
 		))
 	static USAL_FindLeaderboard* FindLeaderboard(
-		const UObject* WorldContextObject,
+		UObject* WorldContextObject,
 		UPARAM(meta=(ToolTip="Exact leaderboard name to search on Steam (case-sensitive)."))
 		const FString& LeaderboardName);
 

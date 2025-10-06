@@ -3,7 +3,7 @@
 
 #include "SAL_UploadScore.h"
 
-USAL_UploadScore* USAL_UploadScore::UploadScore(const UObject* WorldContextObject,
+USAL_UploadScore* USAL_UploadScore::UploadScore(UObject* WorldContextObject,
                                                 FSAL_LeaderboardHandle LeaderboardHandle,
                                                 int32 InScore, ESALLeaderboardUploadMethod UploadMethod,
                                                 const TArray<int32>& Details)
@@ -12,7 +12,7 @@ USAL_UploadScore* USAL_UploadScore::UploadScore(const UObject* WorldContextObjec
 
 	Node->RegisterWithGameInstance(WorldContextObject);
 
-	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
+	Node->WorldContextObject = WorldContextObject;
 	Node->LeaderboardHandle = LeaderboardHandle;
 	Node->Score = InScore;
 	Node->UploadMethod = UploadMethod;

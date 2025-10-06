@@ -23,6 +23,7 @@ class STEAMSAL_API USAL_CreateLeaderboard : public UBlueprintAsyncActionBase
 	GENERATED_BODY()
 
 public:
+
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Leaderboards",
 		DisplayName="Create Steam Leaderboard",
 		meta=(WorldContext="WorldContextObject",
@@ -30,15 +31,14 @@ public:
 			ToolTip="Creates the leaderboard if missing; returns a handle.",
 			Keywords="steam leaderboard create make new"))
 	static USAL_CreateLeaderboard* CreateLeaderboard(
-		const UObject* WorldContextObject,
+		UObject* WorldContextObject,
 		UPARAM(meta=(ToolTip="Exact leaderboard name as it will appear on Steam."))
 		const FString& LeaderboardName,
-		UPARAM(DisplayName="Sort Method",
-			meta=(ToolTip="Ascending: lower is better (time). Descending: higher is better (points)."))
-		ESALLeaderboardSortMethod SortMethod = ESALLeaderboardSortMethod::Descending,
-		UPARAM(DisplayName="Display Type",
-			meta=(ToolTip="How Steam presents the score (numeric/time)."))
-		ESALLeaderboardDisplayType DisplayType = ESALLeaderboardDisplayType::Numeric);
+		UPARAM(DisplayName="Sort Method", meta=(ToolTip="Ascending: lower is better (time). Descending: higher is better (points)."))
+		ESALLeaderboardSortMethod SortMethod,
+		UPARAM(DisplayName="Display Type", meta=(ToolTip="How Steam presents the score (numeric/time)."))
+		ESALLeaderboardDisplayType DisplayType);
+	
 
 	UPROPERTY(BlueprintAssignable)
 	FSAL_CreateLeaderboardSuccess OnSuccess;

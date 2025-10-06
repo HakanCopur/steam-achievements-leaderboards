@@ -30,7 +30,7 @@ public:
 			Keywords="Steam Leaderboard Download Entries Users Friends Ranks Scores IDs Player"
 		))
 	static USAL_DownloadLeaderboardForUsers* DownloadEntriesForUsers(
-		const UObject* WorldContextObject,
+		UObject* WorldContextObject,
 		FSAL_LeaderboardHandle LeaderboardHandle,
 		const TArray<FString>& SteamIDs
 	);

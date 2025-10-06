@@ -2,17 +2,18 @@
 
 
 #include "SAL_DownloadLeaderboardEntries.h"
+#include "Misc/EngineVersionComparison.h"
 
 
 USAL_DownloadLeaderboardEntries* USAL_DownloadLeaderboardEntries::DownloadLeaderboardEntries(
-	const UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle, ELeaderboardRequestType RequestType,
+	UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle, ELeaderboardRequestType RequestType,
 	int32 RangeStart, int32 RangeEnd, int32 DetailsMax)
 {
 	USAL_DownloadLeaderboardEntries* Node = NewObject<USAL_DownloadLeaderboardEntries>();
 
 	Node->RegisterWithGameInstance(WorldContextObject);
 
-	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
+	Node->WorldContextObject = WorldContextObject;
 	Node->InHandle = LeaderboardHandle;
 	Node->InRequestType = RequestType;
 	Node->InRangeStart = RangeStart;
@@ -99,91 +100,95 @@ void USAL_DownloadLeaderboardEntries::Activate()
 
 void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownloaded_t* Callback, bool bIOFailure)
 {
-    if (bIOFailure || Callback == nullptr)
-    {
-        Fail(TEXT("[SAL] DownloadLeaderboardEntries: IO failure or null callback"));
-        return;
-    }
+	if (bIOFailure || Callback == nullptr)
+	{
+		Fail(TEXT("[SAL] DownloadLeaderboardEntries: IO failure or null callback"));
+		return;
+	}
 
-    if (SteamUserStats() == nullptr)
-    {
-        Fail(TEXT("[SAL] DownloadLeaderboardEntries: SteamUserStats not available in callback"));
-        return;
-    }
+	if (SteamUserStats() == nullptr)
+	{
+		Fail(TEXT("[SAL] DownloadLeaderboardEntries: SteamUserStats not available in callback"));
+		return;
+	}
 
-    InDetailsMax = FMath::Clamp(InDetailsMax, 0, 64);
+	InDetailsMax = FMath::Clamp(InDetailsMax, 0, 64);
 
-    if (Callback->m_cEntryCount <= 0)
-    {
-        TArray<FSAL_LeaderboardEntryRow> Empty;
-        OnSuccess.Broadcast(Empty);
-        SetReadyToDestroy();
-        return;
-    }
+	if (Callback->m_cEntryCount <= 0)
+	{
+		TArray<FSAL_LeaderboardEntryRow> Empty;
+		OnSuccess.Broadcast(Empty);
+		SetReadyToDestroy();
+		return;
+	}
 
-    const SteamLeaderboard_t Expected = static_cast<SteamLeaderboard_t>(InHandle.Value);
-    if (Callback->m_hSteamLeaderboard != Expected)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: callback for a different leaderboard handle"));
-    }
+	const SteamLeaderboard_t Expected = static_cast<SteamLeaderboard_t>(InHandle.Value);
+	if (Callback->m_hSteamLeaderboard != Expected)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: callback for a different leaderboard handle"));
+	}
 
-    TArray<FSAL_LeaderboardEntryRow> Rows;
-    Rows.Reserve(Callback->m_cEntryCount);
+	TArray<FSAL_LeaderboardEntryRow> Rows;
+	Rows.Reserve(Callback->m_cEntryCount);
 
-    for (int32 i = 0; i < Callback->m_cEntryCount; ++i)
-    {
-        LeaderboardEntry_t Entry;
+	for (int32 i = 0; i < Callback->m_cEntryCount; ++i)
+	{
+		LeaderboardEntry_t Entry;
 
-        TArray<int32> DetailsTmp;
-        int32* DetailsPtr = nullptr;
-        if (InDetailsMax > 0)
-        {
-            DetailsTmp.SetNumUninitialized(InDetailsMax);
-            DetailsPtr = DetailsTmp.GetData();
-        }
+		TArray<int32> DetailsTmp;
+		int32* DetailsPtr = nullptr;
+		if (InDetailsMax > 0)
+		{
+			DetailsTmp.SetNumUninitialized(InDetailsMax);
+			DetailsPtr = DetailsTmp.GetData();
+		}
 
-        const bool bGot = SteamUserStats()->GetDownloadedLeaderboardEntry(
-            Callback->m_hSteamLeaderboardEntries,
-            i,
-            &Entry,
-            DetailsPtr,
-            InDetailsMax
-        );
+		const bool bGot = SteamUserStats()->GetDownloadedLeaderboardEntry(
+			Callback->m_hSteamLeaderboardEntries,
+			i,
+			&Entry,
+			DetailsPtr,
+			InDetailsMax
+		);
 
-        if (!bGot)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[SAL] GetDownloadedLeaderboardEntry failed at index %d"), i);
-            continue;
-        }
+		if (!bGot)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SAL] GetDownloadedLeaderboardEntry failed at index %d"), i);
+			continue;
+		}
 
-        FSAL_LeaderboardEntryRow Row;
-        Row.SteamID  = LexToString(Entry.m_steamIDUser.ConvertToUint64());
-        Row.GlobalRank = Entry.m_nGlobalRank;
-        Row.Score      = Entry.m_nScore;
+		FSAL_LeaderboardEntryRow Row;
+		Row.SteamID = LexToString(Entry.m_steamIDUser.ConvertToUint64());
+		Row.GlobalRank = Entry.m_nGlobalRank;
+		Row.Score = Entry.m_nScore;
 
-    	if (SteamFriends())
-    	{
-    		const char* Persona = SteamFriends()->GetFriendPersonaName(Entry.m_steamIDUser);
-    		Row.PlayerName = Persona ? UTF8_TO_TCHAR(Persona) : TEXT("");
+		if (SteamFriends())
+		{
+			const char* Persona = SteamFriends()->GetFriendPersonaName(Entry.m_steamIDUser);
+			Row.PlayerName = Persona ? UTF8_TO_TCHAR(Persona) : TEXT("");
 
-    		if (Row.PlayerName.IsEmpty())
-    		{
-    			SteamFriends()->RequestUserInformation(Entry.m_steamIDUser, true);
-    		}
-    	}
+			if (Row.PlayerName.IsEmpty())
+			{
+				SteamFriends()->RequestUserInformation(Entry.m_steamIDUser, true);
+			}
+		}
 
-        if (InDetailsMax > 0)
-        {
-            const int32 Actual = FMath::Min(Entry.m_cDetails, InDetailsMax);
-			DetailsTmp.SetNum(Actual, EAllowShrinking::No);
-            Row.Details = MoveTemp(DetailsTmp);
-        }
+		if (InDetailsMax > 0)
+		{
+			const int32 Actual = FMath::Min(Entry.m_cDetails, InDetailsMax);
+#if UE_VERSION_OLDER_THAN(5, 4, 0)
+			DetailsTmp.SetNum(Actual, /*bAllowShrinking=*/false); // UE 5.3 signature
+#else
+			DetailsTmp.SetNum(Actual, EAllowShrinking::No); // UE 5.4+
+#endif
+			Row.Details = MoveTemp(DetailsTmp);
+		}
 
-        Rows.Add(MoveTemp(Row));
-    }
+		Rows.Add(MoveTemp(Row));
+	}
 
-    OnSuccess.Broadcast(Rows);
-    SetReadyToDestroy();
+	OnSuccess.Broadcast(Rows);
+	SetReadyToDestroy();
 }
 
 

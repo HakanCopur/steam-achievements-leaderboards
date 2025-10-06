@@ -5,17 +5,16 @@
 #include "CoreMinimal.h"
 #include "SALTypes.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSteamSAL, Log, All);
+
 UENUM(BlueprintType)
 enum class ELeaderboardRequestType : uint8
 {
-	Global UMETA(DisplayName = "Global",
-		ToolTip="Downloads a global range by absolute ranks [RangeStart..RangeEnd] (1-based)."),
-	GlobalAroundUser UMETA(DisplayName = "Global Around User",
-		ToolTip=
-		"Downloads entries around the local user; pass negative RangeStart and positive RangeEnd (e.g., -5..+5)."),
-	Friends UMETA(DisplayName = "Friends",
-		ToolTip = "Downloads only Steam friends who have scores on this leaderboard; RangeStart/End are ignored.")
+	Global            UMETA(DisplayName="Global", ToolTip="Downloads a global range by absolute ranks [RangeStart..RangeEnd] (1-based)."),
+	GlobalAroundUser  UMETA(DisplayName="Global Around User", ToolTip="Downloads entries around the local user; use negative RangeStart and positive RangeEnd (e.g., -5..+5)."),
+	Friends           UMETA(DisplayName="Friends", ToolTip="Downloads only Steam friends who have scores; RangeStart/End are ignored.")
 };
+
 
 USTRUCT(BlueprintType)
 struct FLeaderboardOpResult
@@ -87,11 +86,8 @@ public:
 UENUM(BlueprintType)
 enum class ESALLeaderboardUploadMethod : uint8
 {
-	KeepBestScore UMETA(DisplayName = "Keep Best Score (Only Update Score If Better)",
-		ToolTip=
-		"Only replaces the stored score if the new score is better according to the leaderboard's sort method."),
-	ForceUpdate UMETA(DisplayName = "Force Update Score (Always Overwrite)",
-		ToolTip= "Always updates the stored score, even if the new score is worse.")
+	KeepBestScore UMETA(DisplayName = "Keep Best Score (Only Update Score If Better)", ToolTip="Only replaces the stored score if the new score is better according to the leaderboard's sort method."),
+	ForceUpdate UMETA(DisplayName = "Force Update Score (Always Overwrite)", ToolTip= "Always updates the stored score, even if the new score is worse.")
 };
 
 USTRUCT(BlueprintType)
@@ -123,17 +119,11 @@ struct FSAL_LeaderboardEntryRow
 UENUM(BlueprintType)
 enum class ESALStatReadType : uint8
 {
-	Integer UMETA(
-		DisplayName="Integer",
-		ToolTip="Read the stat as an integer value (int32)."),
+	Integer UMETA(DisplayName="Integer", ToolTip="Read the stat as an integer value (int32)."),
 
-	Float UMETA(
-		DisplayName="Float",
-		ToolTip="Read the stat as a floating point value (float)."),
+	Float UMETA(DisplayName="Float", ToolTip="Read the stat as a floating point value (float)."),
 
-	Average UMETA(
-		DisplayName="Average",
-		ToolTip="Read the stat as a float representing an average rate. Use UpdateAvgRateStat to set these.")
+	Average UMETA(DisplayName="Average", ToolTip="Read the stat as a float representing an average rate. Use UpdateAvgRateStat to set these.")
 };
 
 USTRUCT(BlueprintType)

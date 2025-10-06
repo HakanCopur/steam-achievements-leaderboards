@@ -15,7 +15,6 @@ THIRD_PARTY_INCLUDES_START
 #include "steam/steam_api.h"
 THIRD_PARTY_INCLUDES_END
 
-DEFINE_LOG_CATEGORY_STATIC(LogSteamSAL, Log, All);
 
 bool USteamSALBlueprintLibrary::IsSteamAvailable(const UObject* WorldContextObject)
 {

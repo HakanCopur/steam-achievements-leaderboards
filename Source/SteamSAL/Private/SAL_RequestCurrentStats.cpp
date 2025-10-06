@@ -5,13 +5,12 @@
 #include "OnlineSubsystem.h"
 #include "Async/Async.h"
 #include "Async/TaskGraphInterfaces.h"
+#include "SALTypes.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogSteamSAL, Log, All);
-
-USAL_RequestCurrentStats* USAL_RequestCurrentStats::RequestCurrentStats(const UObject* WorldContextObject)
+USAL_RequestCurrentStats* USAL_RequestCurrentStats::RequestCurrentStats(UObject* WorldContextObject)
 {
 	USAL_RequestCurrentStats* Node = NewObject<USAL_RequestCurrentStats>();
-	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
+	Node->WorldContextObject = WorldContextObject;
 	Node->RegisterWithGameInstance(WorldContextObject);
 
 	UE_LOG(LogSteamSAL, Log,

@@ -32,7 +32,7 @@ public:
 			Keywords="steam leaderboard download entries range around user friends scores ranks"),
 		DisplayName="Get Steam Leaderboard Entries")
 	static USAL_DownloadLeaderboardEntries* DownloadLeaderboardEntries(
-		const UObject* WorldContextObject,
+		UObject* WorldContextObject,
 		UPARAM(meta=(ToolTip="Valid leaderboard handle obtained from FindLeaderboard"))
 		FSAL_LeaderboardHandle LeaderboardHandle,
 		UPARAM(

@@ -25,7 +25,7 @@ public:
 			  DisplayName="Store User Stats & Achievements",
 			  ToolTip="Commits pending stat/achievement changes to Steam and triggers the overlay when applicable.",
 			  Keywords="steam stats achievements store commit upload"))
-	static USAL_StoreStatsAndAchievements* StoreUserStatsAndAchievements(const UObject* WorldContextObject);
+	static USAL_StoreStatsAndAchievements* StoreUserStatsAndAchievements(UObject* WorldContextObject);
 
 	UPROPERTY(BlueprintAssignable) FSAL_StoreStatsAndAchievementsSuccess OnSuccess;
 	UPROPERTY(BlueprintAssignable) FSAL_StoreStatsAndAchievementsFailure OnFailure;

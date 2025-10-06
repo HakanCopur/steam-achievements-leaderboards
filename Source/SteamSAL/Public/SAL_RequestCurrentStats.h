@@ -27,7 +27,7 @@ public:
 			  DisplayName="Request Current Stats And Achievements",
 			  ToolTip="Requests the local user's Steam stats and achievements. Must complete before any Get/Set/Store calls.",
 			  Keywords="steam stats achievements request bootstrap ready"))
-	static USAL_RequestCurrentStats* RequestCurrentStats(const UObject* WorldContextObject);
+	static USAL_RequestCurrentStats* RequestCurrentStats(UObject* WorldContextObject);
 
 	UPROPERTY(BlueprintAssignable) FSAL_RequestCurrentStatsSuccess OnSuccess;
 	UPROPERTY(BlueprintAssignable) FSAL_RequestCurrentStatsFailure OnFailure;

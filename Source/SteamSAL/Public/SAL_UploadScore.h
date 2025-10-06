@@ -29,7 +29,7 @@ public:
 			AutoCreateRefTerm="Details",
 			ToolTip="Uploads a score with optional Details (up to 64 ints)."))
 	static USAL_UploadScore* UploadScore(
-		const UObject* WorldContextObject,
+		UObject* WorldContextObject,
 		FSAL_LeaderboardHandle LeaderboardHandle,
 		int32 Score,
 		ESALLeaderboardUploadMethod UploadMethod,

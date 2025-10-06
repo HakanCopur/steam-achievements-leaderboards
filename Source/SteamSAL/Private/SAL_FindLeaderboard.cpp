@@ -11,14 +11,14 @@ THIRD_PARTY_INCLUDES_START
 THIRD_PARTY_INCLUDES_END
 
 USAL_FindLeaderboard* USAL_FindLeaderboard::FindLeaderboard(
-	const UObject* WorldContextObject,
+	UObject* WorldContextObject,
 	const FString& LeaderboardName)
 {
 	USAL_FindLeaderboard* Node = NewObject<USAL_FindLeaderboard>();
 
 	Node->RegisterWithGameInstance(WorldContextObject);
 
-	Node->WorldContextObject = const_cast<UObject*>(WorldContextObject);
+	Node->WorldContextObject = WorldContextObject;
 	Node->InLeaderboardName = LeaderboardName;
 
 	return Node;

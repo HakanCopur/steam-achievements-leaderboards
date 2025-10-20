@@ -7,6 +7,7 @@
 #include "SALTypes.h"
 #include "SAL_Internal.h" 
 #include "Engine/Texture2D.h"
+#include "TimerManager.h"
 
 THIRD_PARTY_INCLUDES_START
 #include "steam/steam_api.h"

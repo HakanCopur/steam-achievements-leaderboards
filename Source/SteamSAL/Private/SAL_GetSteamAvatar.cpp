@@ -3,9 +3,12 @@
 #include "SAL_GetSteamAvatar.h"
 
 #include "Engine/World.h"
-#include "TimerManager.h"
+#include "Engine/Texture.h"
+#include "Engine/Texture2D.h"
+#include "TextureResource.h"
 #include "PixelFormat.h"
 #include "Serialization/BulkData.h"
+#include "TimerManager.h"
 
 TMap<USAL_GetSteamAvatar::FAvatarKey, TWeakObjectPtr<UTexture2D>> USAL_GetSteamAvatar::AvatarCache;
 
@@ -53,7 +56,6 @@ void USAL_GetSteamAvatar::Activate()
         return;
     }
 
-    // Ask Steam for the avatar image handle (may be not ready yet)
     const int ImageHandle = GetAvatarImageHandle(TargetId);
     if (ImageHandle > 0)
     {
@@ -64,21 +66,17 @@ void USAL_GetSteamAvatar::Activate()
             BroadcastSuccess(Tex);
             return;
         }
-        // If retrieval failed even with a valid handle, fall back to polling a bit
     }
     else
     {
-        // Not ready (Steam may return 0 or k_unImageIdInvalid); request persona info to trigger download
         SteamFriends()->RequestUserInformation(TargetId, true);
     }
 
-    // Poll briefly until the image becomes available
     StartPoll();
 }
 
 CSteamID USAL_GetSteamAvatar::ToCSteamID(const FString& SteamIDStr) const
 {
-    // Expecting a 64-bit decimal string (same as you store in FSAL_LeaderboardEntryRow.SteamID)
     uint64 Id64 = 0;
     LexFromString(Id64, *SteamIDStr);
     return CSteamID(Id64);
@@ -110,7 +108,6 @@ bool USAL_GetSteamAvatar::TryGetTextureFromSteamImage(int ImageHandle, UTexture2
         return false;
     }
 
-    // Steam returns RGBA8; Unreal's common path uses BGRA8. We'll convert.
     TArray<uint8> RGBA;
     RGBA.SetNumUninitialized(Width * Height * 4);
 
@@ -119,7 +116,6 @@ bool USAL_GetSteamAvatar::TryGetTextureFromSteamImage(int ImageHandle, UTexture2
         return false;
     }
 
-    // Convert RGBA -> BGRA in-place to a new buffer
     TArray<uint8> BGRA;
     BGRA.SetNumUninitialized(RGBA.Num());
     for (uint32 i = 0; i < Width * Height; ++i)
@@ -135,7 +131,6 @@ bool USAL_GetSteamAvatar::TryGetTextureFromSteamImage(int ImageHandle, UTexture2
         BGRA[i * 4 + 3] = A;
     }
 
-    // Create the texture (PF_B8G8R8A8 to match BGRA)
     UTexture2D* Tex = UTexture2D::CreateTransient(Width, Height, PF_B8G8R8A8);
     if (!IsValid(Tex))
     {
@@ -163,7 +158,7 @@ bool USAL_GetSteamAvatar::TryGetTextureFromSteamImage(int ImageHandle, UTexture2
 
 void USAL_GetSteamAvatar::StartPoll()
 {
-    if (UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull) : nullptr)
+     if (UWorld* World = WorldContextObject ? WorldContextObject->GetWorld() : nullptr)
     {
         PollAttempts = 0;
         World->GetTimerManager().SetTimer(PollHandle, this, &USAL_GetSteamAvatar::PollOnce, PollIntervalSec, true);
@@ -178,7 +173,7 @@ void USAL_GetSteamAvatar::PollOnce()
 {
     if (++PollAttempts > MaxPollAttempts)
     {
-        if (UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr)
+        if (UWorld* World = WorldContextObject ? WorldContextObject->GetWorld() : nullptr)
         {
             World->GetTimerManager().ClearTimer(PollHandle);
         }
@@ -190,13 +185,13 @@ void USAL_GetSteamAvatar::PollOnce()
     const int ImageHandle = GetAvatarImageHandle(TargetId);
     if (ImageHandle <= 0)
     {
-        return; // keep polling
+        return; 
     }
 
     UTexture2D* Tex = nullptr;
     if (TryGetTextureFromSteamImage(ImageHandle, Tex) && Tex)
     {
-        if (UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr)
+        if (UWorld* World = WorldContextObject ? WorldContextObject->GetWorld() : nullptr)
         {
             World->GetTimerManager().ClearTimer(PollHandle);
         }

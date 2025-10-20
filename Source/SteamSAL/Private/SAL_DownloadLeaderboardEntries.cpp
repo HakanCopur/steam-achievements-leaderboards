@@ -3,7 +3,7 @@
 
 #include "SAL_DownloadLeaderboardEntries.h"
 #include "Misc/EngineVersionComparison.h"
-
+#include "SAL_Internal.h"
 
 USAL_DownloadLeaderboardEntries* USAL_DownloadLeaderboardEntries::DownloadLeaderboardEntries(
 	UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle, ELeaderboardRequestType RequestType,
@@ -187,13 +187,29 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
 		Rows.Add(MoveTemp(Row));
 	}
 
-	OnSuccess.Broadcast(Rows);
-	SetReadyToDestroy();
+	TArray<FSAL_LeaderboardEntryRow> RowsCopy = MoveTemp(Rows);
+	TWeakObjectPtr<USAL_DownloadLeaderboardEntries> Self(this);
+
+	SAL_RunOnGameThread([Self, RowsCopy = MoveTemp(RowsCopy)]() mutable
+	{
+		if (!Self.IsValid()) return;
+		Self->OnSuccess.Broadcast(RowsCopy);
+		Self->SetReadyToDestroy();
+	});
+
 }
 
 
 void USAL_DownloadLeaderboardEntries::Fail(const FString& Why)
 {
-	OnFailure.Broadcast(Why);
-	SetReadyToDestroy();
+	const FString WhyCopy = Why;
+	TWeakObjectPtr<USAL_DownloadLeaderboardEntries> Self(this);
+
+	SAL_RunOnGameThread([Self, WhyCopy]()
+	{
+		if (!Self.IsValid()) return;
+		Self->OnFailure.Broadcast(WhyCopy);
+		Self->SetReadyToDestroy();
+	});
+
 }

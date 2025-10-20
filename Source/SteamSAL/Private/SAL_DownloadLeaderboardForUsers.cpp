@@ -2,6 +2,7 @@
 
 
 #include "SAL_DownloadLeaderboardForUsers.h"
+#include "SAL_Internal.h"
 
 USAL_DownloadLeaderboardForUsers* USAL_DownloadLeaderboardForUsers::DownloadEntriesForUsers(
 	UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle,
@@ -172,7 +173,14 @@ void USAL_DownloadLeaderboardForUsers::OnScoresDownloaded(LeaderboardScoresDownl
 			Entries.Add(Row);
 		}
 	}
+	
+	TArray<FSAL_LeaderboardEntryRow> EntriesCopy = MoveTemp(Entries);
+	TWeakObjectPtr<USAL_DownloadLeaderboardForUsers> Self(this);
 
-	OnSuccess.Broadcast(Entries);
-	SetReadyToDestroy();
+	SAL_RunOnGameThread([Self, RowsCopy = MoveTemp(EntriesCopy)]() mutable
+	{
+		if (!Self.IsValid()) return;
+		Self->OnSuccess.Broadcast(RowsCopy);
+		Self->SetReadyToDestroy();
+	});
 }

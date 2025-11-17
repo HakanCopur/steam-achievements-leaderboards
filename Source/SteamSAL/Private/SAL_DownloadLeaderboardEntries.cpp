@@ -7,7 +7,7 @@
 
 USAL_DownloadLeaderboardEntries* USAL_DownloadLeaderboardEntries::DownloadLeaderboardEntries(
 	UObject* WorldContextObject, FSAL_LeaderboardHandle LeaderboardHandle, ELeaderboardRequestType RequestType,
-	int32 RangeStart, int32 RangeEnd, int32 DetailsMax)
+	int32 RangeStart, int32 RangeEnd)
 {
 	USAL_DownloadLeaderboardEntries* Node = NewObject<USAL_DownloadLeaderboardEntries>();
 
@@ -18,7 +18,7 @@ USAL_DownloadLeaderboardEntries* USAL_DownloadLeaderboardEntries::DownloadLeader
 	Node->InRequestType = RequestType;
 	Node->InRangeStart = RangeStart;
 	Node->InRangeEnd = RangeEnd;
-	Node->InDetailsMax = DetailsMax;
+	Node->InDetailsMax = 64;
 
 	return Node;
 }
@@ -27,120 +27,112 @@ void USAL_DownloadLeaderboardEntries::Activate()
 {
 	if (InHandle.Value == 0)
 	{
-		UE_LOG(LogTemp, Warning,
-		       TEXT(
-			       "[SAL] DownloadLeaderboardEntries: Invalid LeaderboardHandle (Value==0). Call FindLeaderboard first."
-		       ));
 		Fail(TEXT("Invalid LeaderboardHandle. Make sure FindLeaderboard succeeded."));
 		return;
 	}
 
 	if (SteamUserStats() == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: SteamUserStats not available"));
-		Fail(TEXT("Steam not available or not initialized."));
+		Fail(TEXT("SteamUserStats not available or not initialized."));
 		return;
 	}
 
 	if (InRequestType != ELeaderboardRequestType::Friends && InRangeEnd < InRangeStart)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: Bad range [%d..%d]"), InRangeStart,
-		       InRangeEnd);
-		Fail(FString::Printf(TEXT("Bad range [%d..%d]."), InRangeStart, InRangeEnd));
+		Fail(FString::Printf(TEXT("Invalid range [%d..%d]."), InRangeStart, InRangeEnd));
 		return;
 	}
 
-	if (InDetailsMax < 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: DetailsMax cannot be negative"));
-		Fail(TEXT("DetailsMax cannot be negative."));
-		return;
-	}
-
-	UE_LOG(LogTemp, Verbose, TEXT("[SAL] DownloadLeaderboardEntries: inputs valid; ready to issue Steam call"));
-
-	ELeaderboardDataRequest DataReq = k_ELeaderboardDataRequestGlobal;
+	ELeaderboardDataRequest DataRequest = k_ELeaderboardDataRequestGlobal;
 	switch (InRequestType)
 	{
-	case ELeaderboardRequestType::Global: DataReq = k_ELeaderboardDataRequestGlobal;
+	case ELeaderboardRequestType::Global:
+		DataRequest = k_ELeaderboardDataRequestGlobal;
 		break;
-	case ELeaderboardRequestType::GlobalAroundUser: DataReq = k_ELeaderboardDataRequestGlobalAroundUser;
+
+	case ELeaderboardRequestType::GlobalAroundUser:
+		DataRequest = k_ELeaderboardDataRequestGlobalAroundUser;
 		break;
-	case ELeaderboardRequestType::Friends: DataReq = k_ELeaderboardDataRequestFriends;
+
+	case ELeaderboardRequestType::Friends:
+		DataRequest = k_ELeaderboardDataRequestFriends;
 		break;
-	default: DataReq = k_ELeaderboardDataRequestGlobal;
+
+	default:
+		DataRequest = k_ELeaderboardDataRequestGlobal;
 		break;
 	}
 
-	const SteamLeaderboard_t SteamHandle = static_cast<SteamLeaderboard_t>(InHandle.Value);
+	SteamLeaderboard_t SteamHandle = static_cast<SteamLeaderboard_t>(InHandle.Value);
 
-	const int32 Start = InRequestType == ELeaderboardRequestType::Friends ? 0 : InRangeStart;
-	const int32 End = InRequestType == ELeaderboardRequestType::Friends ? 0 : InRangeEnd;
+	const int32 Start = (InRequestType == ELeaderboardRequestType::Friends) ? 0 : InRangeStart;
+	const int32 End = (InRequestType == ELeaderboardRequestType::Friends) ? 0 : InRangeEnd;
 
-	SteamAPICall_t Call = SteamUserStats()->DownloadLeaderboardEntries(
+	SteamAPICall_t APICall = SteamUserStats()->DownloadLeaderboardEntries(
 		SteamHandle,
-		DataReq,
+		DataRequest,
 		Start,
 		End
 	);
 
-	if (Call == k_uAPICallInvalid)
+	if (APICall == k_uAPICallInvalid)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[SAL] DownloadLeaderboardEntries: invalid APICall"));
 		Fail(TEXT("Steam returned an invalid API call handle."));
 		return;
 	}
 
-	CallResult.Set(Call, this, &USAL_DownloadLeaderboardEntries::OnScoresDownloaded);
-
-	UE_LOG(LogTemp, Verbose, TEXT("[SAL] DownloadLeaderboardEntries: request sent (Type=%d, %d..%d)"),
-	       static_cast<int32>(InRequestType), Start, End);
+	CallResult.Set(APICall, this, &USAL_DownloadLeaderboardEntries::OnScoresDownloaded);
 }
-
 
 void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownloaded_t* Callback, bool bIOFailure)
 {
 	if (bIOFailure || Callback == nullptr)
 	{
-		Fail(TEXT("[SAL] DownloadLeaderboardEntries: IO failure or null callback"));
+		Fail(TEXT("Steam leaderboard download failed (IO failure)."));
 		return;
 	}
 
 	if (SteamUserStats() == nullptr)
 	{
-		Fail(TEXT("[SAL] DownloadLeaderboardEntries: SteamUserStats not available in callback"));
+		Fail(TEXT("SteamUserStats not available in callback."));
 		return;
 	}
 
-	InDetailsMax = FMath::Clamp(InDetailsMax, 0, 64);
+	FSAL_LeaderboardEntriesData EntriesData;
+	EntriesData.RequestType = InRequestType;
+	EntriesData.TotalEntryCount = Callback->m_cEntryCount;
+
+	if (Callback->m_cEntryCount > 0)
+	{
+		EntriesData.Entries.Reserve(Callback->m_cEntryCount);
+	}
 
 	if (Callback->m_cEntryCount <= 0)
 	{
-		TArray<FSAL_LeaderboardEntryRow> Empty;
-		OnSuccess.Broadcast(Empty);
-		SetReadyToDestroy();
+		TWeakObjectPtr<USAL_DownloadLeaderboardEntries> Self(this);
+
+		SAL_RunOnGameThread([Self, EntriesData]()
+		{
+			if (!Self.IsValid()) return;
+			const int32 EntryCount = EntriesData.Entries.Num();
+			Self->OnSuccess.Broadcast(EntriesData, EntryCount);
+			Self->SetReadyToDestroy();
+		});
+
 		return;
 	}
-
-	const SteamLeaderboard_t Expected = static_cast<SteamLeaderboard_t>(InHandle.Value);
-	if (Callback->m_hSteamLeaderboard != Expected)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadLeaderboardEntries: callback for a different leaderboard handle"));
-	}
-
-	TArray<FSAL_LeaderboardEntryRow> Rows;
-	Rows.Reserve(Callback->m_cEntryCount);
 
 	for (int32 i = 0; i < Callback->m_cEntryCount; ++i)
 	{
 		LeaderboardEntry_t Entry;
 
-		TArray<int32> DetailsTmp;
+		TArray<int32> DetailsBuffer;
 		int32* DetailsPtr = nullptr;
+
 		if (InDetailsMax > 0)
 		{
-			DetailsTmp.SetNumUninitialized(InDetailsMax);
-			DetailsPtr = DetailsTmp.GetData();
+			DetailsBuffer.SetNumUninitialized(InDetailsMax);
+			DetailsPtr = DetailsBuffer.GetData();
 		}
 
 		const bool bGot = SteamUserStats()->GetDownloadedLeaderboardEntry(
@@ -153,7 +145,7 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
 
 		if (!bGot)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[SAL] GetDownloadedLeaderboardEntry failed at index %d"), i);
+			UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] Failed to get entry %d"), i);
 			continue;
 		}
 
@@ -161,11 +153,13 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
 		Row.SteamID = LexToString(Entry.m_steamIDUser.ConvertToUint64());
 		Row.GlobalRank = Entry.m_nGlobalRank;
 		Row.Score = Entry.m_nScore;
+		Row.UGCHandle.Value = static_cast<int64>(Entry.m_hUGC);
+		Row.bHasUGC = (Entry.m_hUGC != 0);
 
 		if (SteamFriends())
 		{
-			const char* Persona = SteamFriends()->GetFriendPersonaName(Entry.m_steamIDUser);
-			Row.PlayerName = Persona ? UTF8_TO_TCHAR(Persona) : TEXT("");
+			const char* Nick = SteamFriends()->GetFriendPersonaName(Entry.m_steamIDUser);
+			Row.PlayerName = Nick ? UTF8_TO_TCHAR(Nick) : TEXT("");
 
 			if (Row.PlayerName.IsEmpty())
 			{
@@ -175,28 +169,30 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
 
 		if (InDetailsMax > 0)
 		{
-			const int32 Actual = FMath::Min(Entry.m_cDetails, InDetailsMax);
+			const int32 ActualDetails = FMath::Min(Entry.m_cDetails, InDetailsMax);
+
 #if UE_VERSION_OLDER_THAN(5, 4, 0)
-			DetailsTmp.SetNum(Actual, /*bAllowShrinking=*/false); // UE 5.3 signature
+			DetailsBuffer.SetNum(ActualDetails, false);
 #else
-			DetailsTmp.SetNum(Actual, EAllowShrinking::No); // UE 5.4+
+			DetailsBuffer.SetNum(ActualDetails, EAllowShrinking::No);
 #endif
-			Row.Details = MoveTemp(DetailsTmp);
+
+			Row.Details = MoveTemp(DetailsBuffer);
 		}
 
-		Rows.Add(MoveTemp(Row));
+		EntriesData.Entries.Add(MoveTemp(Row));
 	}
 
-	TArray<FSAL_LeaderboardEntryRow> RowsCopy = MoveTemp(Rows);
 	TWeakObjectPtr<USAL_DownloadLeaderboardEntries> Self(this);
 
-	SAL_RunOnGameThread([Self, RowsCopy = MoveTemp(RowsCopy)]() mutable
+	SAL_RunOnGameThread([Self, EntriesData = MoveTemp(EntriesData)]() mutable
 	{
 		if (!Self.IsValid()) return;
-		Self->OnSuccess.Broadcast(RowsCopy);
+
+		const int32 EntryCount = EntriesData.Entries.Num();
+		Self->OnSuccess.Broadcast(EntriesData, EntryCount);
 		Self->SetReadyToDestroy();
 	});
-
 }
 
 
@@ -211,5 +207,4 @@ void USAL_DownloadLeaderboardEntries::Fail(const FString& Why)
 		Self->OnFailure.Broadcast(WhyCopy);
 		Self->SetReadyToDestroy();
 	});
-
 }

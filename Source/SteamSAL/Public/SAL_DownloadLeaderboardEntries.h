@@ -12,9 +12,11 @@ THIRD_PARTY_INCLUDES_END
 
 #include "SAL_DownloadLeaderboardEntries.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSAL_OnLeaderboardEntriesSuccess, const TArray<FSAL_LeaderboardEntryRow>&,
-                                            Entries);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSAL_OnLeaderboardEntriesFailure, const FString&, ErrorMessage);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSAL_OnLeaderboardEntriesDataSuccess,
+											const FSAL_LeaderboardEntriesData&, EntriesData,
+											int32, EntryCount);
 
 UCLASS()
 class STEAMSAL_API USAL_DownloadLeaderboardEntries : public UBlueprintAsyncActionBase
@@ -22,15 +24,13 @@ class STEAMSAL_API USAL_DownloadLeaderboardEntries : public UBlueprintAsyncActio
 	GENERATED_BODY()
 
 public:
-
 	UFUNCTION(BlueprintCallable, Category="SteamSAL|Leaderboard",
 		meta=(WorldContext="WorldContextObject",
 			BlueprintInternalUseOnly="true",
 			ToolTip=
-			"Download leaderboard entries by range or request type (Global, Around User, Friends).\nUse RangeStart and RangeEnd for the range of results, or 0,0 for Friends.",
-			AdvancedDisplay="DetailsMax",
-			Keywords="steam leaderboard download entries range around user friends scores ranks"),
-		DisplayName="Get Steam Leaderboard Entries")
+			"Download leaderboard entries by range or request type (Global, Around User, Friends).\nUse RangeStart and RangeEnd for the range of results, or 0,0 for Friends."
+			, Keywords="steam leaderboard download entries range around user friends scores ranks"),
+		DisplayName="Download Steam Leaderboard Entries")
 	static USAL_DownloadLeaderboardEntries* DownloadLeaderboardEntries(
 		UObject* WorldContextObject,
 		UPARAM(meta=(ToolTip="Valid leaderboard handle obtained from FindLeaderboard"))
@@ -48,16 +48,15 @@ public:
 			meta=(ToolTip=
 				"End index for entries (inclusive).\nFor Global: higher = more entries.\nFor AroundUser: positive = entries after user."
 			))
-		int32 RangeEnd,
-		UPARAM(meta=(ToolTip="Maximum number of 'details' integers per entry.\nUse 0 if you don't need extra details."))
-		int32 DetailsMax = 0
+		int32 RangeEnd
 	);
-	
+
 	UPROPERTY(BlueprintAssignable, Category="SteamSAL|Leaderboard")
-	FSAL_OnLeaderboardEntriesSuccess OnSuccess;
+	FSAL_OnLeaderboardEntriesDataSuccess OnSuccess;
 
 	UPROPERTY(BlueprintAssignable, Category="SteamSAL|Leaderboard")
 	FSAL_OnLeaderboardEntriesFailure OnFailure;
+
 
 	virtual void Activate() override;
 
@@ -75,5 +74,4 @@ private:
 
 	void OnScoresDownloaded(LeaderboardScoresDownloaded_t* Callback, bool bIOFailure);
 	void Fail(const FString& Why);
-	
 };

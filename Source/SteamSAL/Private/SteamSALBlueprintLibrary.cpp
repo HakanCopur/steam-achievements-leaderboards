@@ -6,10 +6,10 @@
 #include "GameFramework/PlayerState.h"
 #include "OnlineSubsystem.h"
 #include "SALTypes.h"
-#include "Engine/Texture2D.h"        
-#include "PixelFormat.h"             
-#include "Serialization/BulkData.h"  
-#include "TextureResource.h" 
+#include "Engine/Texture2D.h"
+#include "PixelFormat.h"
+#include "Serialization/BulkData.h"
+#include "TextureResource.h"
 
 THIRD_PARTY_INCLUDES_START
 #include "steam/steam_api.h"
@@ -128,8 +128,8 @@ ESALLeaderboardDisplayType USteamSALBlueprintLibrary::GetLeaderboardDisplayType(
 
 void USteamSALBlueprintLibrary::SetAchievement(const FString& AchievementAPIName, bool& bSuccess)
 {
-    bSuccess = false;
-	
+	bSuccess = false;
+
 	if (!SteamUserStats())
 		return;
 
@@ -139,7 +139,7 @@ void USteamSALBlueprintLibrary::SetAchievement(const FString& AchievementAPIName
 void USteamSALBlueprintLibrary::ClearAchievement(const FString& AchievementAPIName, bool& bSuccess)
 {
 	bSuccess = false;
-	
+
 	if (!SteamUserStats())
 		return;
 
@@ -155,7 +155,7 @@ void USteamSALBlueprintLibrary::GetAchievementStatus(const FString& AchievementA
 
 	if (!SteamUserStats())
 	{
-		return; 
+		return;
 	}
 
 	uint32 UnlockTime = 0;
@@ -171,12 +171,12 @@ void USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex, FS
 {
 	APIName = {};
 	bSuccess = false;
-	
+
 	if (!SteamUserStats())
 	{
 		return;
 	}
-	
+
 	APIName = SteamUserStats()->GetAchievementName(AchievementIndex);
 	bSuccess = true;
 }
@@ -184,8 +184,6 @@ void USteamSALBlueprintLibrary::GetAchievementAPIName(int32 AchievementIndex, FS
 
 UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& AchievementAPIName)
 {
-
-
 	if (SteamUserStats() == nullptr || SteamUtils() == nullptr)
 	{
 		return nullptr;
@@ -211,7 +209,8 @@ UTexture2D* USteamSALBlueprintLibrary::GetAchievementIcon(const FString& Achieve
 		return nullptr;
 	}
 
-	UTexture2D* Texture = UTexture2D::CreateTransient(static_cast<int32>(Width), static_cast<int32>(Height), EPixelFormat::PF_R8G8B8A8);
+	UTexture2D* Texture = UTexture2D::CreateTransient(static_cast<int32>(Width), static_cast<int32>(Height),
+	                                                  EPixelFormat::PF_R8G8B8A8);
 	if (!Texture || !Texture->GetPlatformData() || Texture->GetPlatformData()->Mips.Num() == 0)
 	{
 		return nullptr;
@@ -344,7 +343,7 @@ void USteamSALBlueprintLibrary::GetStoredStat(const FString& StatAPIName, ESALSt
 
 	if (!SteamUserStats())
 	{
-		return; 
+		return;
 	}
 
 	const char* NameAnsi = TCHAR_TO_ANSI(*StatAPIName);
@@ -453,14 +452,16 @@ void USteamSALBlueprintLibrary::SetStoredStat(
 	case ESALStatReadType::Integer:
 		{
 			const bool ok = SteamUserStats()->SetStat(AnsiName, IntegerValue);
-			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SetStat(int) failed for '%s' (%d)"), *StatAPIName, IntegerValue);
+			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SetStat(int) failed for '%s' (%d)"),
+			                *StatAPIName, IntegerValue);
 			bSuccess = ok;
 			break;
 		}
 	case ESALStatReadType::Float:
 		{
 			const bool ok = SteamUserStats()->SetStat(AnsiName, FloatValue);
-			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SetStat(float) failed for '%s' (%f)"), *StatAPIName, FloatValue);
+			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: SetStat(float) failed for '%s' (%f)"),
+			                *StatAPIName, FloatValue);
 			bSuccess = ok;
 			break;
 		}
@@ -468,12 +469,14 @@ void USteamSALBlueprintLibrary::SetStoredStat(
 		{
 			if (SessionLengthSeconds <= 0.0f)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: AvgRate requires SessionLengthSeconds > 0 for '%s'"), *StatAPIName);
+				UE_LOG(LogTemp, Warning,
+				       TEXT("[SAL] SetStoredStat: AvgRate requires SessionLengthSeconds > 0 for '%s'"), *StatAPIName);
 				return;
 			}
 			const bool ok = SteamUserStats()->UpdateAvgRateStat(AnsiName, CountThisSession, SessionLengthSeconds);
-			if (!ok) UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStat: UpdateAvgRateStat failed for '%s' (Count=%f, Sec=%f)"),
-							*StatAPIName, CountThisSession, SessionLengthSeconds);
+			if (!ok) UE_LOG(LogTemp, Warning,
+			                TEXT("[SAL] SetStoredStat: UpdateAvgRateStat failed for '%s' (Count=%f, Sec=%f)"),
+			                *StatAPIName, CountThisSession, SessionLengthSeconds);
 			bSuccess = ok;
 			break;
 		}
@@ -483,7 +486,6 @@ void USteamSALBlueprintLibrary::SetStoredStat(
 			break;
 		}
 	}
-
 }
 
 void USteamSALBlueprintLibrary::SetStoredStats(
@@ -526,30 +528,28 @@ void USteamSALBlueprintLibrary::SetStoredStats(
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] SetStoredStats: one or more writes failed"));
 	}
-	
 }
 
 void USteamSALBlueprintLibrary::ClearUserStats(bool bAlsoResetAchievements, bool& bSuccess)
 {
-    bSuccess = false;
+	bSuccess = false;
 
 
-    if (SteamUserStats() == nullptr)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[SAL] ClearUserStats: SteamUserStats unavailable"));
-        return;
-    }
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] ClearUserStats: SteamUserStats unavailable"));
+		return;
+	}
 
-    const bool ok = SteamUserStats()->ResetAllStats(bAlsoResetAchievements);
-    if (!ok)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[SAL] ClearUserStats: ResetAllStats(%s) returned false"),
-            bAlsoResetAchievements ? TEXT("true") : TEXT("false"));
-        return;
-    }
-	
-    bSuccess = true;
-	
+	const bool ok = SteamUserStats()->ResetAllStats(bAlsoResetAchievements);
+	if (!ok)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] ClearUserStats: ResetAllStats(%s) returned false"),
+		       bAlsoResetAchievements ? TEXT("true") : TEXT("false"));
+		return;
+	}
+
+	bSuccess = true;
 }
 
 void USteamSALBlueprintLibrary::ShowAchievementsOverlay(bool& bSuccess)
@@ -570,7 +570,6 @@ void USteamSALBlueprintLibrary::ShowAchievementsOverlay(bool& bSuccess)
 
 	SteamFriends()->ActivateGameOverlay("Achievements");
 	bSuccess = true;
-
 }
 
 void USteamSALBlueprintLibrary::GetGlobalStat(
@@ -617,7 +616,6 @@ void USteamSALBlueprintLibrary::GetGlobalStat(
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStat: Unsupported StatType for '%s'"), *StatAPIName);
 	}
-	
 }
 
 
@@ -689,75 +687,76 @@ void USteamSALBlueprintLibrary::GetGlobalStatHistory(
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] GetGlobalStatHistory: Unsupported StatType for '%s'"), *StatAPIName);
 	}
-
 }
 
 void USteamSALBlueprintLibrary::AddToStoredStat(
-    const FString& StatAPIName,
-    ESALStatReadType StatType,
-    float Delta,
-    float& NewValue,
-    bool& bSuccess)
+	const FString& StatAPIName,
+	ESALStatReadType StatType,
+	float Delta,
+	float& NewValue,
+	bool& bSuccess)
 {
-    bSuccess = false;
-    NewValue = 0.0f;
-	
-    if (SteamUserStats() == nullptr)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SteamUserStats unavailable"));
-        return;
-    }
-    if (StatAPIName.IsEmpty())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: Empty StatAPIName"));
-        return;
-    }
+	bSuccess = false;
+	NewValue = 0.0f;
 
-    const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
+	if (SteamUserStats() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SteamUserStats unavailable"));
+		return;
+	}
+	if (StatAPIName.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: Empty StatAPIName"));
+		return;
+	}
 
-    if (StatType == ESALStatReadType::Integer)
-    {
-        int32 Current = 0;
-        if (!SteamUserStats()->GetStat(AnsiName, &Current))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: GetStat(int) failed for '%s'"), *StatAPIName);
-            return;
-        }
+	const ANSICHAR* AnsiName = TCHAR_TO_ANSI(*StatAPIName);
 
-        int32 Updated = Current + static_cast<int32>(Delta);
-        if (!SteamUserStats()->SetStat(AnsiName, Updated))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SetStat(int) failed for '%s' (%d)"), *StatAPIName, Updated);
-            return;
-        }
+	if (StatType == ESALStatReadType::Integer)
+	{
+		int32 Current = 0;
+		if (!SteamUserStats()->GetStat(AnsiName, &Current))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: GetStat(int) failed for '%s'"), *StatAPIName);
+			return;
+		}
 
-        NewValue = static_cast<float>(Updated);
-        bSuccess = true;
-    }
-    else if (StatType == ESALStatReadType::Float)
-    {
-        float Current = 0.0f;
-        if (!SteamUserStats()->GetStat(AnsiName, &Current))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: GetStat(float) failed for '%s'"), *StatAPIName);
-            return;
-        }
+		int32 Updated = Current + static_cast<int32>(Delta);
+		if (!SteamUserStats()->SetStat(AnsiName, Updated))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SetStat(int) failed for '%s' (%d)"), *StatAPIName,
+			       Updated);
+			return;
+		}
 
-        float Updated = Current + Delta;
-        if (!SteamUserStats()->SetStat(AnsiName, Updated))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SetStat(float) failed for '%s' (%f)"), *StatAPIName, Updated);
-            return;
-        }
+		NewValue = static_cast<float>(Updated);
+		bSuccess = true;
+	}
+	else if (StatType == ESALStatReadType::Float)
+	{
+		float Current = 0.0f;
+		if (!SteamUserStats()->GetStat(AnsiName, &Current))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: GetStat(float) failed for '%s'"), *StatAPIName);
+			return;
+		}
 
-        NewValue = Updated;
-        bSuccess = true;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: Unsupported StatType for '%s' (only Integer/Float allowed)"), *StatAPIName);
-    }
-	
+		float Updated = Current + Delta;
+		if (!SteamUserStats()->SetStat(AnsiName, Updated))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[SAL] AddToStoredStat: SetStat(float) failed for '%s' (%f)"), *StatAPIName,
+			       Updated);
+			return;
+		}
+
+		NewValue = Updated;
+		bSuccess = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning,
+		       TEXT("[SAL] AddToStoredStat: Unsupported StatType for '%s' (only Integer/Float allowed)"), *StatAPIName);
+	}
 }
 
 void USteamSALBlueprintLibrary::ListAllAchievementAPINames(
@@ -790,11 +789,48 @@ void USteamSALBlueprintLibrary::ListAllAchievementAPINames(
 	}
 
 	bSuccess = true;
-
 }
 
+bool USteamSALBlueprintLibrary::GetDownloadedLeaderboardEntry(
+	const FSAL_LeaderboardEntriesData& EntriesData,
+	int32 Index,
+	FString& SteamID,
+	int32& GlobalRank,
+	int32& Score,
+	FString& PlayerName,
+	TArray<int32>& Details,
+	bool& bHasUGC,
+	FSAL_UGCHandle& UGCHandle)
+{
+	SteamID.Empty();
+	GlobalRank = 0;
+	Score = 0;
+	PlayerName.Empty();
+	Details.Empty();
 
+	const int32 Count = EntriesData.Entries.Num();
+	if (Count <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetDownloadedLeaderboardEntry: EntriesData is empty."));
+		return false;
+	}
 
+	if (Index < 0 || Index >= Count)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetDownloadedLeaderboardEntry: Index %d out of range (0..%d)."),
+			   Index, Count - 1);
+		return false;
+	}
 
+	const FSAL_LeaderboardEntryRow& Row = EntriesData.Entries[Index];
 
-
+	SteamID    = Row.SteamID;
+	GlobalRank = Row.GlobalRank;
+	Score      = Row.Score;
+	PlayerName = Row.PlayerName;
+	Details    = Row.Details; 
+	bHasUGC	   = Row.bHasUGC;
+	UGCHandle = Row.UGCHandle;
+	
+	return true;
+}

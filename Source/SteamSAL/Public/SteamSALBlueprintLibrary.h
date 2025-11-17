@@ -297,4 +297,23 @@ public:
 		TArray<FString>& AchievementAPINames,
 		UPARAM(meta=(DisplayName="Success"))
 		bool& bSuccess);
+
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Leaderboard",
+		meta=(
+			DisplayName="Get Downloaded Leaderboard Entry",
+			ToolTip=
+			"Returns a single downloaded leaderboard entry (SteamID, Rank, Score, PlayerName, Details) from EntriesData at the given Index. Returns false if Index is out of range."
+			,
+			Keywords="steam leaderboard get downloaded entry row index score rank name details"
+		))
+	static bool GetDownloadedLeaderboardEntry(
+		const FSAL_LeaderboardEntriesData& EntriesData,
+		int32 Index,
+		FString& SteamID,
+		int32& GlobalRank,
+		int32& Score,
+		FString& PlayerName,
+		TArray<int32>& Details,
+		bool& bHasUGC,
+		FSAL_UGCHandle& UGCHandle);
 };

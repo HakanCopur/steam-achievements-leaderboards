@@ -10,11 +10,30 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSteamSAL, Log, All);
 UENUM(BlueprintType)
 enum class ELeaderboardRequestType : uint8
 {
-	Global            UMETA(DisplayName="Global", ToolTip="Downloads a global range by absolute ranks [RangeStart..RangeEnd] (1-based)."),
-	GlobalAroundUser  UMETA(DisplayName="Global Around User", ToolTip="Downloads entries around the local user; use negative RangeStart and positive RangeEnd (e.g., -5..+5)."),
-	Friends           UMETA(DisplayName="Friends", ToolTip="Downloads only Steam friends who have scores; RangeStart/End are ignored.")
+	Global UMETA(DisplayName="Global",
+		ToolTip="Downloads a global range by absolute ranks [RangeStart..RangeEnd] (1-based)."),
+	GlobalAroundUser UMETA(DisplayName="Global Around User",
+		ToolTip=
+		"Downloads entries around the local user; use negative RangeStart and positive RangeEnd (e.g., -5..+5)."),
+	Friends UMETA(DisplayName="Friends",
+		ToolTip="Downloads only Steam friends who have scores; RangeStart/End are ignored.")
 };
 
+USTRUCT(BlueprintType)
+struct STEAMSAL_API FSAL_UGCHandle
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|UGC",
+		meta=(ToolTip="Raw 64-bit Steam UGC handle. Zero means invalid."))
+	int64 Value = 0;
+
+	bool IsValid() const
+	{
+		return Value != 0;
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FLeaderboardOpResult
@@ -86,34 +105,48 @@ public:
 UENUM(BlueprintType)
 enum class ESALLeaderboardUploadMethod : uint8
 {
-	KeepBestScore UMETA(DisplayName = "Keep Best Score (Only Update Score If Better)", ToolTip="Only replaces the stored score if the new score is better according to the leaderboard's sort method."),
-	ForceUpdate UMETA(DisplayName = "Force Update Score (Always Overwrite)", ToolTip= "Always updates the stored score, even if the new score is worse.")
+	KeepBestScore UMETA(DisplayName = "Keep Best Score (Only Update Score If Better)",
+		ToolTip=
+		"Only replaces the stored score if the new score is better according to the leaderboard's sort method."),
+	ForceUpdate UMETA(DisplayName = "Force Update Score (Always Overwrite)",
+		ToolTip= "Always updates the stored score, even if the new score is worse.")
 };
 
 USTRUCT(BlueprintType)
 struct FSAL_LeaderboardEntryRow
 {
-	GENERATED_BODY();
+	GENERATED_BODY()
+	;
 
 	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-			  meta=(ToolTip="Player's SteamID64 (e.g., 7656119...)."))
+		meta=(ToolTip="Player's SteamID64 (e.g., 7656119...)."))
 	FString SteamID = TEXT("");
 
 	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-			  meta=(ToolTip="Global rank (1 = top)."))
+		meta=(ToolTip="Global rank (1 = top)."))
 	int32 GlobalRank = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-			  meta=(ToolTip="Score value as stored on the leaderboard."))
+		meta=(ToolTip="Score value as stored on the leaderboard."))
 	int32 Score = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-			  meta=(AdvancedDisplay, ToolTip="Optional metadata saved with the score. Visible only if you requested DetailsMax > 0 when downloading. Up to 64 int32 values."))
+		meta=(AdvancedDisplay, ToolTip=
+			"Optional metadata saved with the score. Visible only if you requested DetailsMax > 0 when downloading. Up to 64 int32 values."
+		))
 	TArray<int32> Details;
 
 	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		  meta=(ToolTip="Player's current Steam display name. May be empty if not cached yet."))
+		meta=(ToolTip="Player's current Steam display name. May be empty if not cached yet."))
 	FString PlayerName;
+
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|Leaderboard|UGC",
+		meta=(ToolTip="True if this entry has an attached UGC handle."))
+	bool bHasUGC = false;
+
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|Leaderboard|UGC",
+		meta=(ToolTip="UGC handle attached to this leaderboard entry, if any."))
+	FSAL_UGCHandle UGCHandle;
 };
 
 UENUM(BlueprintType)
@@ -123,7 +156,8 @@ enum class ESALStatReadType : uint8
 
 	Float UMETA(DisplayName="Float", ToolTip="Read the stat as a floating point value (float)."),
 
-	Average UMETA(DisplayName="Average", ToolTip="Read the stat as a float representing an average rate. Use UpdateAvgRateStat to set these.")
+	Average UMETA(DisplayName="Average",
+		ToolTip="Read the stat as a float representing an average rate. Use UpdateAvgRateStat to set these.")
 };
 
 USTRUCT(BlueprintType)
@@ -189,21 +223,37 @@ struct FSAL_StatWrite
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
 		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Integer",
-			  ToolTip="New integer value to set when StatType is Integer."))
+			ToolTip="New integer value to set when StatType is Integer."))
 	int32 IntegerValue = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
 		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Float",
-			  ToolTip="New float value to set when StatType is Float."))
+			ToolTip="New float value to set when StatType is Float."))
 	float FloatValue = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
 		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",
-			  ToolTip="Average stats: amount counted this session (e.g., events)."))
+			ToolTip="Average stats: amount counted this session (e.g., events)."))
 	float CountThisSession = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
 		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",
-			  ToolTip="Average stats: duration for this measurement in seconds (must be > 0)."))
+			ToolTip="Average stats: duration for this measurement in seconds (must be > 0)."))
 	float SessionLengthSeconds = 0.0f;
 };
+
+USTRUCT(BlueprintType)
+struct STEAMSAL_API FSAL_LeaderboardEntriesData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|Leaderboard")
+	TArray<FSAL_LeaderboardEntryRow> Entries;
+
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|Leaderboard")
+	int32 TotalEntryCount = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|Leaderboard")
+	ELeaderboardRequestType RequestType = ELeaderboardRequestType::Global;
+};
+

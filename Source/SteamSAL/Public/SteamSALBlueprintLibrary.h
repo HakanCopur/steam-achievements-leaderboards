@@ -316,4 +316,68 @@ public:
 		TArray<int32>& Details,
 		bool& bHasUGC,
 		FSAL_UGCHandle& UGCHandle);
+	
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Utilities",
+	meta=(
+		DisplayName="Bytes To String",
+		ToolTip="Converts a byte array to an FString using Base64 encoding.",
+		Keywords="steam bytes to string base64 encode convert"
+	))
+	static FString BytesToString_Base64(const TArray<uint8>& Bytes);
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Utilities",
+		meta=(
+			DisplayName="String To Bytes",
+			ToolTip="Converts an FString into a byte array using Base64 decoding.",
+			Keywords="steam string to bytes base64 decode convert"
+		))
+	static void StringToBytes_Base64(const FString& String, TArray<uint8>& OutBytes);
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Leaderboard",
+	meta=(
+		DisplayName="Format Leaderboard Score",
+		ToolTip="Formats a raw leaderboard score (int32) into a human-readable string based on the DisplayType (Numeric, TimeSeconds, TimeMilliseconds).",
+		Keywords="steam leaderboard format score time seconds milliseconds mm:ss"
+	))
+	static FString FormatLeaderboardScore(
+		int32 Score,
+		ESALLeaderboardDisplayType DisplayType);
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Utilities",
+		meta=(
+			DisplayName="Save Bytes To File",
+			ToolTip="Saves a byte array to an absolute file path on disk. Returns true on success.",
+			Keywords="steam file save bytes write disk io"
+		))
+	static bool SaveBytesToFile(const FString& AbsoluteFilePath, const TArray<uint8>& Bytes);
+
+	UFUNCTION(BlueprintCallable, Category="SteamSAL|Utilities",
+		meta=(
+			DisplayName="Load File To Bytes",
+			ToolTip="Loads a file from an absolute path on disk into a byte array. Returns true on success.",
+			Keywords="steam file load bytes read disk io"
+		))
+	static bool LoadFileToBytes(const FString& AbsoluteFilePath, TArray<uint8>& OutBytes);
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Identity",
+	meta=(
+		DisplayName="Get Steam Display Name From SteamID",
+		ToolTip="Resolves a Steam persona (display) name from a 64-bit SteamID string. Returns empty if Steam is unavailable or the ID is unknown.",
+		Keywords="steam steamid id64 name persona nickname player friend"
+	))
+	static void GetPersonaNameFromSteamID(
+		const FString& SteamID64,
+		FString& PersonaName);
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Time",
+	meta=(
+		DisplayName="Get Steam Server Real Time",
+		ToolTip="Returns the current real time from the Steam backend as Unix time (seconds since 1970-01-01 UTC) and as a FDateTime (UTC).",
+		Keywords="steam time server realtime real clock unix timestamp date"
+	))
+	static void GetSteamServerRealTime(
+		int64& UnixTimeSeconds,
+		FDateTime& UtcDateTime);
+
+
+
 };

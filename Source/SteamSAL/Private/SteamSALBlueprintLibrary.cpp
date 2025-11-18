@@ -834,3 +834,184 @@ bool USteamSALBlueprintLibrary::GetDownloadedLeaderboardEntry(
 	
 	return true;
 }
+
+FString USteamSALBlueprintLibrary::BytesToString_Base64(const TArray<uint8>& Bytes)
+{
+	if (Bytes.Num() == 0)
+	{
+		return FString();
+	}
+
+	return FBase64::Encode(Bytes);
+}
+
+void USteamSALBlueprintLibrary::StringToBytes_Base64(const FString& String, TArray<uint8>& OutBytes)
+{
+	OutBytes.Empty();
+
+	if (String.IsEmpty())
+	{
+		return;
+	}
+
+	FBase64::Decode(String, OutBytes);
+}
+
+FString USteamSALBlueprintLibrary::FormatLeaderboardScore(
+	int32 Score,
+	ESALLeaderboardDisplayType DisplayType)
+{
+
+	if (DisplayType == ESALLeaderboardDisplayType::Numeric)
+	{
+		return FString::FromInt(Score);
+	}
+	
+	if (DisplayType == ESALLeaderboardDisplayType::TimeSeconds)
+	{
+		const int32 TotalSeconds = FMath::Max(Score, 0);
+
+		const int32 Minutes = TotalSeconds / 60;
+		const int32 Seconds = TotalSeconds % 60;
+
+		return FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+	}
+	
+	if (DisplayType == ESALLeaderboardDisplayType::TimeMilliSeconds)
+	{
+		const int32 TotalMS = FMath::Max(Score, 0);
+
+		const int32 TotalSeconds = TotalMS / 1000;
+		const int32 Milliseconds = TotalMS % 1000;
+
+		const int32 Minutes = TotalSeconds / 60;
+		const int32 Seconds = TotalSeconds % 60;
+
+		return FString::Printf(TEXT("%02d:%02d.%03d"), Minutes, Seconds, Milliseconds);
+	}
+
+	return FString::FromInt(Score);
+}
+
+bool USteamSALBlueprintLibrary::SaveBytesToFile(
+	const FString& AbsoluteFilePath,
+	const TArray<uint8>& Bytes)
+{
+	if (AbsoluteFilePath.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] SaveBytesToFile: Empty file path"));
+		return false;
+	}
+
+	if (Bytes.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] SaveBytesToFile: Bytes array is empty"));
+		return false;
+	}
+
+	const FString Directory = FPaths::GetPath(AbsoluteFilePath);
+	if (!IFileManager::Get().DirectoryExists(*Directory))
+	{
+		IFileManager::Get().MakeDirectory(*Directory, true);
+	}
+
+	const bool bSaved = FFileHelper::SaveArrayToFile(Bytes, *AbsoluteFilePath);
+
+	if (!bSaved)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] SaveBytesToFile: Failed to write file '%s'"), *AbsoluteFilePath);
+	}
+
+	return bSaved;
+}
+
+bool USteamSALBlueprintLibrary::LoadFileToBytes(
+	const FString& AbsoluteFilePath,
+	TArray<uint8>& OutBytes)
+{
+	OutBytes.Empty();
+
+	if (AbsoluteFilePath.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] LoadFileToBytes: Empty file path"));
+		return false;
+	}
+
+	if (!IFileManager::Get().FileExists(*AbsoluteFilePath))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] LoadFileToBytes: File does not exist '%s'"), *AbsoluteFilePath);
+		return false;
+	}
+
+	const bool bLoaded = FFileHelper::LoadFileToArray(OutBytes, *AbsoluteFilePath);
+
+	if (!bLoaded)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] LoadFileToBytes: Failed to load file '%s'"), *AbsoluteFilePath);
+		OutBytes.Empty();
+	}
+
+	return bLoaded;
+}
+
+void USteamSALBlueprintLibrary::GetPersonaNameFromSteamID(
+	const FString& SteamID64,
+	FString& PersonaName)
+{
+	PersonaName.Empty();
+	
+
+	if (SteamFriends() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetPersonaNameFromSteamID: SteamFriends unavailable"));
+		return;
+	}
+
+	if (SteamID64.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetPersonaNameFromSteamID: Empty SteamID64 string"));
+		return;
+	}
+
+	uint64 SteamIDValue = FCString::Strtoui64(*SteamID64, /*EndPtr=*/nullptr, /*Base=*/10);
+	if (SteamIDValue == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetPersonaNameFromSteamID: Failed to parse SteamID64 '%s'"),
+			   *SteamID64);
+		return;
+	}
+
+	CSteamID SteamID(SteamIDValue);
+
+	const char* NameAnsi = SteamFriends()->GetFriendPersonaName(SteamID);
+	if (NameAnsi == nullptr || NameAnsi[0] == '\0')
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("[SteamSAL] GetPersonaNameFromSteamID: Persona name not available for '%s'"),
+			   *SteamID64);
+		return;
+	}
+
+	PersonaName = UTF8_TO_TCHAR(NameAnsi);
+}
+
+void USteamSALBlueprintLibrary::GetSteamServerRealTime(
+	int64& UnixTimeSeconds,
+	FDateTime& UtcDateTime)
+{
+	UnixTimeSeconds = 0;
+	UtcDateTime = FDateTime();
+
+	if (SteamUtils() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetSteamServerRealTime: SteamUtils unavailable"));
+		return;
+	}
+
+	const uint32 RawSeconds = SteamUtils()->GetServerRealTime();
+	UnixTimeSeconds = static_cast<int64>(RawSeconds);
+
+	UtcDateTime = FDateTime::FromUnixTimestamp(UnixTimeSeconds);
+
+}
+
+

@@ -1,6 +1,5 @@
 // Copyright (c) 2025 UnForge. All rights reserved.
 
-
 #include "SAL_DownloadLeaderboardForUsers.h"
 #include "SAL_Internal.h"
 
@@ -12,9 +11,9 @@ USAL_DownloadLeaderboardForUsers* USAL_DownloadLeaderboardForUsers::DownloadEntr
 
 	Node->RegisterWithGameInstance(WorldContextObject);
 
-	Node->WorldContextObject = WorldContextObject;
-	Node->InHandle           = LeaderboardHandle;
-	Node->InSteamId64Strings = SteamIDs;
+	Node->WorldContextObject     = WorldContextObject;
+	Node->InHandle               = LeaderboardHandle;
+	Node->InSteamId64Strings     = SteamIDs;
 
 	return Node;
 }
@@ -42,7 +41,6 @@ void USAL_DownloadLeaderboardForUsers::Activate()
 		return;
 	}
 
-	// Steam docs: practical cap is 100 users per call. Trim if needed (safe guard).
 	constexpr int32 kMaxUsers = 100;
 	const int32 CountClamped = FMath::Min(InSteamId64Strings.Num(), kMaxUsers);
 
@@ -53,7 +51,6 @@ void USAL_DownloadLeaderboardForUsers::Activate()
 	{
 		const FString& S = InSteamId64Strings[i];
 
-		// Parse as uint64
 		uint64 Raw64 = 0;
 		if (!LexTryParseString<uint64>(Raw64, *S))
 		{
@@ -62,8 +59,7 @@ void USAL_DownloadLeaderboardForUsers::Activate()
 		}
 
 		const CSteamID Cid((uint64)Raw64);
-		// Optional strictness: ensure it looks like an individual account
-		if (!Cid.IsValid() /* || Cid.GetEAccountType() != k_EAccountTypeIndividual */)
+		if (!Cid.IsValid())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadEntriesForUsers: Invalid SteamID64 '%s' (skipped)"), *S);
 			continue;
@@ -79,7 +75,6 @@ void USAL_DownloadLeaderboardForUsers::Activate()
 		return;
 	}
 
-	// Fire the async request
 	SteamAPICall_t ApiCall = SteamUserStats()->DownloadLeaderboardEntriesForUsers(
 		(SteamLeaderboard_t)InHandle.Value,
 		SteamIDs.GetData(),
@@ -93,7 +88,6 @@ void USAL_DownloadLeaderboardForUsers::Activate()
 		return;
 	}
 
-	// Bind our result handler to this object’s lifetime
 	DownloadCallResult.Set(
 		ApiCall,
 		this,
@@ -123,19 +117,30 @@ void USAL_DownloadLeaderboardForUsers::OnScoresDownloaded(LeaderboardScoresDownl
 		UE_LOG(LogTemp, Warning, TEXT("[SAL] DownloadEntriesForUsers: Callback for a different leaderboard handle"));
 	}
 
+	FSAL_LeaderboardEntriesData EntriesData;
+	EntriesData.RequestType     = ELeaderboardRequestType::Global;
+	EntriesData.TotalEntryCount = Callback->m_cEntryCount;
+
+	if (Callback->m_cEntryCount > 0)
+	{
+		EntriesData.Entries.Reserve(Callback->m_cEntryCount);
+	}
+
 	if (Callback->m_cEntryCount <= 0)
 	{
-		TArray<FSAL_LeaderboardEntryRow> Empty;
-		OnSuccess.Broadcast(Empty);
-		SetReadyToDestroy();
+		TWeakObjectPtr<USAL_DownloadLeaderboardForUsers> Self(this);
+
+		SAL_RunOnGameThread([Self, EntriesData]()
+		{
+			if (!Self.IsValid()) return;
+			Self->OnSuccess.Broadcast(EntriesData, 0);
+			Self->SetReadyToDestroy();
+		});
+
 		return;
 	}
 
-	TArray<FSAL_LeaderboardEntryRow> Entries;
-	Entries.Reserve(Callback->m_cEntryCount);
-
 	LeaderboardEntry_t RawEntry;
-	// We’ll fetch details into a buffer first.
 	int32 DetailBuffer[64];
 
 	for (int32 i = 0; i < Callback->m_cEntryCount; ++i)
@@ -148,39 +153,38 @@ void USAL_DownloadLeaderboardForUsers::OnScoresDownloaded(LeaderboardScoresDownl
 			UE_ARRAY_COUNT(DetailBuffer)))
 		{
 			FSAL_LeaderboardEntryRow Row;
-			Row.SteamID   = FString::Printf(TEXT("%llu"), RawEntry.m_steamIDUser.ConvertToUint64());
-			Row.GlobalRank  = RawEntry.m_nGlobalRank;
-			Row.Score       = RawEntry.m_nScore;
-			
+			Row.SteamID    = FString::Printf(TEXT("%llu"), RawEntry.m_steamIDUser.ConvertToUint64());
+			Row.GlobalRank = RawEntry.m_nGlobalRank;
+			Row.Score      = RawEntry.m_nScore;
+
 			if (SteamFriends())
 			{
 				const char* Persona = SteamFriends()->GetFriendPersonaName(RawEntry.m_steamIDUser);
 				Row.PlayerName = Persona ? UTF8_TO_TCHAR(Persona) : TEXT("");
 
-				// Optional: if not cached yet, request so it becomes available soon
 				if (Row.PlayerName.IsEmpty())
 				{
 					SteamFriends()->RequestUserInformation(RawEntry.m_steamIDUser, true);
 				}
 			}
-			
+
 			for (int32 d = 0; d < RawEntry.m_cDetails; ++d)
 			{
 				Row.Details.Add(DetailBuffer[d]);
 			}
-			
 
-			Entries.Add(Row);
+			EntriesData.Entries.Add(Row);
 		}
 	}
-	
-	TArray<FSAL_LeaderboardEntryRow> EntriesCopy = MoveTemp(Entries);
+
+	const int32 EntryCount = EntriesData.Entries.Num();
+
 	TWeakObjectPtr<USAL_DownloadLeaderboardForUsers> Self(this);
 
-	SAL_RunOnGameThread([Self, RowsCopy = MoveTemp(EntriesCopy)]() mutable
+	SAL_RunOnGameThread([Self, EntriesData, EntryCount]() mutable
 	{
 		if (!Self.IsValid()) return;
-		Self->OnSuccess.Broadcast(RowsCopy);
+		Self->OnSuccess.Broadcast(EntriesData, EntryCount);
 		Self->SetReadyToDestroy();
 	});
 }

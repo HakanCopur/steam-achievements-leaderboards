@@ -12,7 +12,7 @@ public class SteamSAL : ModuleRules
         });
 
         PrivateDependencyModuleNames.AddRange(new[] {
-            "OnlineSubsystem",
+            "OnlineSubsystem", "OnlineSubsystemUtils",
         });
 
         if (Target.Platform == UnrealTargetPlatform.Win64)

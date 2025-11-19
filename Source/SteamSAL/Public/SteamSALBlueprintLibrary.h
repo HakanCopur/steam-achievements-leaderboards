@@ -316,22 +316,6 @@ public:
 		TArray<int32>& Details,
 		bool& bHasUGC,
 		FSAL_UGCHandle& UGCHandle);
-	
-	UFUNCTION(BlueprintPure, Category="SteamSAL|Utilities",
-	meta=(
-		DisplayName="Bytes To String",
-		ToolTip="Converts a byte array to an FString using Base64 encoding.",
-		Keywords="steam bytes to string base64 encode convert"
-	))
-	static FString BytesToString_Base64(const TArray<uint8>& Bytes);
-
-	UFUNCTION(BlueprintPure, Category="SteamSAL|Utilities",
-		meta=(
-			DisplayName="String To Bytes",
-			ToolTip="Converts an FString into a byte array using Base64 decoding.",
-			Keywords="steam string to bytes base64 decode convert"
-		))
-	static void StringToBytes_Base64(const FString& String, TArray<uint8>& OutBytes);
 
 	UFUNCTION(BlueprintPure, Category="SteamSAL|Leaderboard",
 	meta=(
@@ -378,6 +362,13 @@ public:
 		int64& UnixTimeSeconds,
 		FDateTime& UtcDateTime);
 
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Utilities",
+		  DisplayName="Bytes To String (UTF8)")
+	static FString BytesToString_UTF8(const TArray<uint8>& Bytes);
+
+	UFUNCTION(BlueprintPure, Category="SteamSAL|Utilities",
+			  DisplayName="String To Bytes (UTF8)")
+	static void StringToBytes_UTF8(const FString& String, TArray<uint8>& OutBytes);
 
 
 };

@@ -10,6 +10,8 @@
 #include "PixelFormat.h"
 #include "Serialization/BulkData.h"
 #include "TextureResource.h"
+#include "HAL/FileManager.h"
+#include "Misc/FileHelper.h"
 
 THIRD_PARTY_INCLUDES_START
 #include "steam/steam_api.h"
@@ -835,28 +837,6 @@ bool USteamSALBlueprintLibrary::GetDownloadedLeaderboardEntry(
 	return true;
 }
 
-FString USteamSALBlueprintLibrary::BytesToString_Base64(const TArray<uint8>& Bytes)
-{
-	if (Bytes.Num() == 0)
-	{
-		return FString();
-	}
-
-	return FBase64::Encode(Bytes);
-}
-
-void USteamSALBlueprintLibrary::StringToBytes_Base64(const FString& String, TArray<uint8>& OutBytes)
-{
-	OutBytes.Empty();
-
-	if (String.IsEmpty())
-	{
-		return;
-	}
-
-	FBase64::Decode(String, OutBytes);
-}
-
 FString USteamSALBlueprintLibrary::FormatLeaderboardScore(
 	int32 Score,
 	ESALLeaderboardDisplayType DisplayType)
@@ -973,7 +953,7 @@ void USteamSALBlueprintLibrary::GetPersonaNameFromSteamID(
 		return;
 	}
 
-	uint64 SteamIDValue = FCString::Strtoui64(*SteamID64, /*EndPtr=*/nullptr, /*Base=*/10);
+	uint64 SteamIDValue = FCString::Strtoui64(*SteamID64, nullptr, 10);
 	if (SteamIDValue == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SteamSAL] GetPersonaNameFromSteamID: Failed to parse SteamID64 '%s'"),
@@ -1013,5 +993,33 @@ void USteamSALBlueprintLibrary::GetSteamServerRealTime(
 	UtcDateTime = FDateTime::FromUnixTimestamp(UnixTimeSeconds);
 
 }
+
+
+FString USteamSALBlueprintLibrary::BytesToString_UTF8(const TArray<uint8>& Bytes)
+{
+	if (Bytes.Num() == 0)
+	{
+		return FString();
+	}
+
+	const ANSICHAR* DataPtr = reinterpret_cast<const ANSICHAR*>(Bytes.GetData());
+	FUTF8ToTCHAR Conv(DataPtr, Bytes.Num());
+	return FString(Conv.Length(), Conv.Get());
+}
+
+void USteamSALBlueprintLibrary::StringToBytes_UTF8(const FString& String, TArray<uint8>& OutBytes)
+{
+	OutBytes.Empty();
+
+	if (String.IsEmpty())
+	{
+		return;
+	}
+
+	FTCHARToUTF8 Conv(*String);
+	OutBytes.SetNumUninitialized(Conv.Length());
+	FMemory::Memcpy(OutBytes.GetData(), Conv.Get(), Conv.Length());
+}
+
 
 

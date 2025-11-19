@@ -38,8 +38,16 @@ void USAL_UploadScoreWithUGC::Activate()
 
 	if (InUGCFileName.IsEmpty())
 	{
-		Fail(TEXT("[SteamSAL] UploadScoreWithUGC: UGCFileName is empty."));
-		return;
+		const FString AutoFileName = FString::Printf(
+			TEXT("SteamSAL_UGC_%llu.json"),
+			(uint64)FDateTime::UtcNow().ToUnixTimestamp()
+		);
+
+		UE_LOG(LogTemp, Warning,
+			   TEXT("[SteamSAL] UploadScoreWithUGC: No UGCFileName provided. Using auto-generated '%s'"),
+			   *AutoFileName);
+
+		InUGCFileName = AutoFileName;
 	}
 
 	if (InUGCData.Num() <= 0)
@@ -59,23 +67,48 @@ void USAL_UploadScoreWithUGC::Activate()
 		Fail(TEXT("[SteamSAL] UploadScoreWithUGC: SteamUserStats is not available."));
 		return;
 	}
-
-	// 1) Write the file to Steam Remote Storage (synchronous)
+	
 	const FTCHARToUTF8 Utf8FileName(*InUGCFileName);
-
+	
 	const bool bWriteOk = SteamRemoteStorage()->FileWrite(
-		Utf8FileName.Get(),
-		InUGCData.GetData(),
-		InUGCData.Num()
-	);
+	Utf8FileName.Get(),
+	InUGCData.GetData(),
+	InUGCData.Num()
+);
+	
+	const bool bCloudAccount = SteamRemoteStorage()->IsCloudEnabledForAccount();
+	const bool bCloudApp     = SteamRemoteStorage()->IsCloudEnabledForApp();
 
+	AppId_t AppId = k_uAppIdInvalid;
+	if (SteamUtils())
+	{
+		AppId = SteamUtils()->GetAppID();
+	}
+
+	UE_LOG(LogTemp, Warning,
+		   TEXT("[SteamSAL] UploadScoreWithUGC: Cloud status - Account=%s, App=%s, AppID=%u, FileName='%s', Size=%d"),
+		   bCloudAccount ? TEXT("ENABLED") : TEXT("DISABLED"),
+		   bCloudApp     ? TEXT("ENABLED") : TEXT("DISABLED"),
+		   (uint32)AppId,
+		   *InUGCFileName,
+		   InUGCData.Num());
+	
+	uint64 TotalBytes = 0;
+	uint64 AvailableBytes = 0;
+	const bool bGotQuota = SteamRemoteStorage()->GetQuota(&TotalBytes, &AvailableBytes);
+
+	UE_LOG(LogTemp, Warning,
+		   TEXT("[SteamSAL] UploadScoreWithUGC: Quota - GotQuota=%s, Total=%llu, Available=%llu"),
+		   bGotQuota ? TEXT("true") : TEXT("false"),
+		   (unsigned long long)TotalBytes,
+		   (unsigned long long)AvailableBytes);
+	
 	if (!bWriteOk)
 	{
 		Fail(TEXT("[SteamSAL] UploadScoreWithUGC: FileWrite to Remote Storage failed."));
 		return;
 	}
-
-	// 2) Start asynchronous FileShare to get a UGC handle
+	
 	StartFileShare();
 }
 
@@ -116,11 +149,8 @@ void USAL_UploadScoreWithUGC::OnFileShared(RemoteStorageFileShareResult_t* Callb
 		Fail(Reason);
 		return;
 	}
-
-	// Store the shared UGC handle for later attach
+	
 	SharedUGCHandle.Value = static_cast<int64>(Callback->m_hFile);
-
-	// 3) Now upload the leaderboard score
 	StartUploadScore();
 }
 
@@ -145,7 +175,7 @@ void USAL_UploadScoreWithUGC::StartUploadScore()
 
 	SteamAPICall_t ApiCall = SteamUserStats()->UploadLeaderboardScore(
 		SteamHandle,
-		k_ELeaderboardUploadScoreMethodKeepBest, // same default behavior as typical upload
+		k_ELeaderboardUploadScoreMethodKeepBest,
 		InScore,
 		DetailsPtr,
 		DetailsCount
@@ -174,10 +204,8 @@ void USAL_UploadScoreWithUGC::OnScoreUploaded(LeaderboardScoreUploaded_t* Callba
 		return;
 	}
 
-	// Keep the final score Steam reports (in case it changed).
 	InScore = Callback->m_nScore;
 
-	// 4) Attach the shared UGC handle to the uploaded score
 	StartAttachUGC();
 }
 
@@ -212,7 +240,7 @@ void USAL_UploadScoreWithUGC::OnUGCAttached(LeaderboardUGCSet_t* Callback, bool 
 {
 	if (bIOFailure || Callback == nullptr)
 	{
-		Fail(TEXT("[SteamSAL] UploadScoreWithUGC: AttachLeaderboardUGC IO failure."));
+		Fail(TEXT("[SteamSAL] UploadScoreWithUGC: AttachLeaderboardUGC IO failure or null callback."));
 		return;
 	}
 
@@ -222,6 +250,7 @@ void USAL_UploadScoreWithUGC::OnUGCAttached(LeaderboardUGCSet_t* Callback, bool 
 			TEXT("[SteamSAL] UploadScoreWithUGC: AttachLeaderboardUGC failed with result %d."),
 			static_cast<int32>(Callback->m_eResult)
 		);
+
 		Fail(Reason);
 		return;
 	}
@@ -229,31 +258,28 @@ void USAL_UploadScoreWithUGC::OnUGCAttached(LeaderboardUGCSet_t* Callback, bool 
 	const int32          FinalScore  = InScore;
 	const FSAL_UGCHandle FinalHandle = SharedUGCHandle;
 
-	TWeakObjectPtr<USAL_UploadScoreWithUGC> Self(this);
+	UE_LOG(
+		LogTemp,
+		Log,
+		TEXT("[SteamSAL] UploadScoreWithUGC: AttachLeaderboardUGC success (Score=%d, UGCHandle=%lld)."),
+		FinalScore,
+		static_cast<long long>(FinalHandle.Value)
+	);
 
-	SAL_RunOnGameThread([Self, FinalScore, FinalHandle]()
-	{
-		if (!Self.IsValid()) return;
+	OnSuccess.Broadcast(
+		FinalScore,
+		FinalHandle
+	);
 
-		Self->OnSuccess.Broadcast(
-			FinalScore,
-			FinalHandle,
-			TEXT("[SteamSAL] UploadScoreWithUGC: Score and UGC successfully uploaded and attached.")
-		);
-		Self->SetReadyToDestroy();
-	});
+	SetReadyToDestroy();
 }
+
 
 void USAL_UploadScoreWithUGC::Fail(const FString& Why)
 {
-	const FString WhyCopy = Why;
-	TWeakObjectPtr<USAL_UploadScoreWithUGC> Self(this);
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *Why);
 
-	SAL_RunOnGameThread([Self, WhyCopy]()
-	{
-		if (!Self.IsValid()) return;
-
-		Self->OnFailure.Broadcast(WhyCopy);
-		Self->SetReadyToDestroy();
-	});
+	OnFailure.Broadcast(Why);
+	SetReadyToDestroy();
 }
+

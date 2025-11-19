@@ -12,10 +12,9 @@ THIRD_PARTY_INCLUDES_END
 
 #include "SAL_UploadScoreWithUGC.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSAL_OnUploadScoreWithUGCSuccess,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSAL_OnUploadScoreWithUGCSuccess,
                                                int32, NewScore,
-                                               const FSAL_UGCHandle&, UGCHandle,
-                                               const FString&, DebugMessage);
+                                               const FSAL_UGCHandle&, UGCHandle);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSAL_OnUploadScoreWithUGCFailure,
                                             const FString&, ErrorMessage);
@@ -32,6 +31,7 @@ public:
 			ToolTip=
 			"Upload a score to a Steam leaderboard and attach a UGC file in a single call.\n The node will:\n- Write the UGC data to Steam Remote Storage\n- Share the file to obtain a UGC handle\n- Upload the score\n- Attach the UGC handle to the uploaded score."
 			,
+			AutoCreateRefTerm = "Details,UGCData",
 			Keywords="steam leaderboard upload score ugc file remote storage attach"),
 		DisplayName="Upload Steam Leaderboard Score With UGC")
 	static USAL_UploadScoreWithUGC* UploadScoreWithUGC(

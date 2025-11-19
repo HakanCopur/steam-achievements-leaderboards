@@ -153,8 +153,19 @@ void USAL_DownloadLeaderboardEntries::OnScoresDownloaded(LeaderboardScoresDownlo
 		Row.SteamID = LexToString(Entry.m_steamIDUser.ConvertToUint64());
 		Row.GlobalRank = Entry.m_nGlobalRank;
 		Row.Score = Entry.m_nScore;
-		Row.UGCHandle.Value = static_cast<int64>(Entry.m_hUGC);
-		Row.bHasUGC = (Entry.m_hUGC != 0);
+		
+		const uint64 RawUGC = static_cast<uint64>(Entry.m_hUGC);
+
+		if (RawUGC == 0 || RawUGC == k_UGCHandleInvalid)
+		{
+			Row.UGCHandle.Value = 0;
+			Row.bHasUGC         = false;
+		}
+		else
+		{
+			Row.UGCHandle.Value = static_cast<int64>(RawUGC);
+			Row.bHasUGC         = true;
+		}
 
 		if (SteamFriends())
 		{

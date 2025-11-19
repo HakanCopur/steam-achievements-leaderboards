@@ -157,6 +157,19 @@ void USAL_DownloadLeaderboardForUsers::OnScoresDownloaded(LeaderboardScoresDownl
 			Row.GlobalRank = RawEntry.m_nGlobalRank;
 			Row.Score      = RawEntry.m_nScore;
 
+			const uint64 RawUGC = static_cast<uint64>(RawEntry.m_hUGC);
+
+			if (RawUGC == 0 || RawUGC == k_UGCHandleInvalid)
+			{
+				Row.UGCHandle.Value = 0;
+				Row.bHasUGC         = false;
+			}
+			else
+			{
+				Row.UGCHandle.Value = static_cast<int64>(RawUGC);
+				Row.bHasUGC         = true;
+			}
+			
 			if (SteamFriends())
 			{
 				const char* Persona = SteamFriends()->GetFriendPersonaName(RawEntry.m_steamIDUser);

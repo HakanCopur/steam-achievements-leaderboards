@@ -12,11 +12,10 @@ THIRD_PARTY_INCLUDES_END
 
 #include "SAL_DownloadUGCFile.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FSAL_OnDownloadUGCFileSuccess,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSAL_OnDownloadUGCFileSuccess,
                                               const FSAL_UGCHandle&, UGCHandle,
                                               const TArray<uint8>&, Data,
-                                              int32, DataSize,
-                                              const FString&, DebugMessage);
+                                              int32, DataSize);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSAL_OnDownloadUGCFileFailure,
                                             const FString&, ErrorMessage);

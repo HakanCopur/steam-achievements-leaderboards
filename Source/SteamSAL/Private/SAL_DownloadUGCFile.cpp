@@ -121,8 +121,7 @@ void USAL_DownloadUGCFile::OnDownloadCompleted(RemoteStorageDownloadUGCResult_t*
 
 	if (BytesRead < BytesToRead)
 	{
-		// Shrink to actual bytes read (avoid trailing garbage).
-		DownloadedData.SetNum(BytesRead, /*bAllowShrinking=*/false);
+		DownloadedData.SetNum(BytesRead, false);
 	}
 
 	const int32 FinalSize = DownloadedData.Num();
@@ -138,8 +137,7 @@ void USAL_DownloadUGCFile::OnDownloadCompleted(RemoteStorageDownloadUGCResult_t*
 		Self->OnSuccess.Broadcast(
 			HandleCopy,
 			DataCopy,
-			FinalSize,
-			TEXT("[SteamSAL] DownloadUGCFile: UGC file downloaded successfully.")
+			FinalSize
 		);
 
 		Self->SetReadyToDestroy();

@@ -6,18 +6,43 @@
 
 <p align="center">
   Blueprint-first, async-driven, tiny API surface.<br/>
-  Supports Unreal Engine <b>5.0 → 5.4</b> on <b>Win64</b>.
+  Supports Unreal Engine <b>5.0 → 5.6</b> on <b>Win64</b>.
 </p>
 
+---
+
+## **New in v1.2.0**
+
+- 🧾 **UGC-enabled leaderboards**
+  - Upload and attach arbitrary binary data (replays, ghosts, screenshots, JSON, etc.) to leaderboard scores via **Upload Steam Leaderboard Score With UGC**.
+  - Download UGC metadata together with leaderboard rows and check **Has UGC / UGCHandle** from **Get Downloaded Leaderboard Entry**.
+- 👥 **Download entries for specific users**
+  - Use **Download Steam Leaderboard Entries (Users)** with an array of SteamIDs to fetch only the players you care about (e.g. party members, rivals, or friends list).
+- 🧮 **Single-entry struct flow**
+  - **Download Steam Leaderboard Entries** now works with a compact **Entries Data** handle and **Get Downloaded Leaderboard Entry** returns a single, strongly-typed struct per index (SteamID, Global Rank, Score, Player Name, Details[], HasUGC, UGCHandle).
+- 🧰 **New helper functions**
+  - `Format Leaderboard Score` (numeric or time-style formatting),
+  - `Get Steam Server Real Time` (Unix + UTC string),
+  - `String To Bytes (UTF8)` / `Bytes To String (UTF8)`,
+  - `Save Bytes To File` / `Load File To Bytes` for working with UGC payloads and other binary data.
+
+---
+
 ## **Table of Contents**
+- [**New in v1.2.0**](#new-in-v120)
+- [**Table of Contents**](#table-of-contents)
 - [**About**](#about)
 - [**Features**](#features)
+  - [**Leaderboards**](#leaderboards)
+  - [**Achievements \& Stats**](#achievements--stats)
 - [**Compatibility**](#compatibility)
 - [**Install**](#install)
 - [**Enable Steam Online Subsystem (Required)**](#enable-steam-online-subsystem-required)
-- [**Quick Start — Leaderboards**](#quick-start-leaderboards)
-- [**Quick Start — Achievements & Stats**](#quick-start-achievements--stats)
+- [**Quick Start — Leaderboards**](#quick-start--leaderboards)
+- [**Quick Start — Achievements \& Stats**](#quick-start--achievements--stats)
 - [**Blueprint Nodes Overview (Highlights)**](#blueprint-nodes-overview-highlights)
+  - [**Async**](#async)
+  - [**Pure / Helpers (5+ practical calls)**](#pure--helpers-5-practical-calls)
 - [**Troubleshooting**](#troubleshooting)
 - [**License**](#license)
 
@@ -32,9 +57,11 @@
 ### **Leaderboards**
 - 🔎 **Find / Create** leaderboards
 - ⬆️ **Upload** scores (Keep Best / Force Update) with optional `Details[]`
-- ⬇️ **Download** entries (Global, Friends, Around User, For Users)
-- 🧩 **Break** rows → SteamID, Global Rank, Score, Details[], Player Name
-- 🧰 Helpers for name, sort, display, and entry count
+- ⬆️ **Upload scores with UGC** — attach custom binary payloads (bytes) to each score using a UGC file name + data
+- ⬇️ **Download** entries (Global, Friends, Around User, For Users, By SteamID list)
+- 🧩 **Break** rows → SteamID, Global Rank, Score, Details[], Player Name, **HasUGC**, **UGCHandle**
+- 🔢 **Format** leaderboard scores into human-readable text (`Numeric`, `TimeSeconds`, etc.)
+- 🧰 Helpers for name, sort, display, entry count, and UGC-related workflows
 
 ### **Achievements & Stats**
 - 🚀 **Request Current Stats & Achievements** (async) at startup
@@ -46,7 +73,7 @@
 ---
 
 ## **Compatibility**
-- **Engine:** UE **5.0 → 5.4**
+- **Engine:** UE **5.0 → 5.6**
 - **Platform:** **Win64** (others not officially tested)
 - **Plugin Type:** **Runtime** (no content)
 
@@ -67,7 +94,7 @@
 Follow Epic’s official guide (**select your exact UE version** in the doc’s version switcher):  
 **▶ Online Subsystem Steam:** https://dev.epicgames.com/documentation/en-us/unreal-engine/online-subsystem-steam-interface-in-unreal-engine
 
-**Minimal `Config/DefaultEngine.ini` (UE 5.0–5.4):**
+**Minimal `Config/DefaultEngine.ini` (UE 5.0–5.6):**
 ```ini
 ; Enable Steam as the default online subsystem
 [OnlineSubsystem]
@@ -96,9 +123,11 @@ NetConnectionClassName="/Script/OnlineSubsystemSteam.SteamNetConnection"
 ## **Quick Start — Leaderboards**
 1. Call **`Is Steam Available`** → proceed only if `true`.
 2. **`Find Steam Leaderboard`** (or **`Create Steam Leaderboard`**) → cache the **Leaderboard Handle**.
-3. **`Upload Steam Leaderboard Score`** → send your score (+ optional `Details[]`).
-4. **`Get Steam Leaderboard Entries`** → pick **Global / Friends / Around User / For Users**.
-5. For each entry, **`Break SAL_LeaderboardEntryRow`** → `SteamID`, `GlobalRank`, `Score`, `Details[]`, `PlayerName`.
+3. For uploading scores, use:
+   - **`Upload Steam Leaderboard Score`** for a standard score (+ optional `Details[]`), or  
+   - **`Upload Steam Leaderboard Score With UGC`** if you also want to attach UGC bytes (file name + data).
+4. For downloading scores, use **`Download Steam Leaderboard Entries`** (Global / Friends / Around User / For Users) or **`Download Steam Leaderboard Entries (Users)`** with a list of SteamIDs.
+5. To read a specific row, call **`Get Downloaded Leaderboard Entry`** with an index → `SteamID`, `GlobalRank`, `Score`, `Details[]`, `PlayerName`, `HasUGC`, `UGCHandle`.
 
 ---
 
@@ -127,16 +156,24 @@ NetConnectionClassName="/Script/OnlineSubsystemSteam.SteamNetConnection"
 
 ## **Blueprint Nodes Overview (Highlights)**
 ### **Async**
-- **Leaderboards:** `Find Steam Leaderboard`, `Create Steam Leaderboard`, `Upload Steam Leaderboard Score`, `Get Steam Leaderboard Entries`, `Get Steam Leaderboard Entries (Users)`
+- **Leaderboards:**  
+  `Find Steam Leaderboard`, `Create Steam Leaderboard`,  
+  `Upload Steam Leaderboard Score`, `Upload Steam Leaderboard Score With UGC`,  
+  `Download Steam Leaderboard Entries`, `Download Steam Leaderboard Entries (Users)`,  
+  `Get Downloaded Leaderboard Entry`
 - **Achievements/Stats:** `Request Current Stats And Achievements`, `Store User Stats And Achievements`, `Request Global Stats`
 - **UI:** `Show Achievements Overlay`
 
 ### **Pure / Helpers (5+ practical calls)**
-- `Is Steam Available`, `Get SteamID`
-- `Get Achievement API Names`, `Get Achievement Display Name`, `Get Achievement Icon`, `Get Global Achievement Percent`
-- `Get Local (Cached) Stat`, `Get Global Stat (Aggregated)`, `Get Global Stat History`
-- `Get Leaderboard Name / Sort Method / Display Type / Entry Count`
-- Struct makers: `Make SteamStat`, `Make SAL_StatWrite` (for batch/local writes)
+- **Core:** `Is Steam Available`, `Get SteamID`
+- **Achievements/Stats:** `Get Achievement API Names`, `Get Achievement Display Name`, `Get Achievement Icon`, `Get Global Achievement Percent`,  
+  `Get Local (Cached) Stat`, `Get Global Stat (Aggregated)`, `Get Global Stat History`
+- **Leaderboards:** `Get Leaderboard Name`, `Get Leaderboard Sort Method`, `Get Leaderboard Display Type`, `Get Leaderboard Entry Count`,  
+  `Format Leaderboard Score`
+- **Steam / UGC utilities:** `Get Steam Server Real Time`, `Get Steam Display Name From SteamID`,  
+  `String To Bytes (UTF8)`, `Bytes To String (UTF8)`,  
+  `Save Bytes To File`, `Load File To Bytes`
+- **Struct makers:** `Make SteamStat`, `Make SAL_StatWrite` (for batch/local writes)
 
 ---
 

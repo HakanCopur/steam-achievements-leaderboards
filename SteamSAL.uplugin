@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
   "Version": 1,
-  "VersionName": "1.1.0",
+  "VersionName": "1.2.0",
   "FriendlyName": "Steam Stats, Achievements & Leaderboards",
   "Description": "Easy Steam Stats, Achievements & Leaderboards for UE5. Blueprint-first, async-driven.",
   "Category": "Online",

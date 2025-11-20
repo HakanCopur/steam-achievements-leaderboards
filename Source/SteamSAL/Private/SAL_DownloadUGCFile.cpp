@@ -2,6 +2,7 @@
 
 #include "SAL_DownloadUGCFile.h"
 #include "SAL_Internal.h"
+#include "Misc/EngineVersionComparison.h"
 
 USAL_DownloadUGCFile* USAL_DownloadUGCFile::DownloadUGCFile(
 	UObject* WorldContextObject,
@@ -121,7 +122,12 @@ void USAL_DownloadUGCFile::OnDownloadCompleted(RemoteStorageDownloadUGCResult_t*
 
 	if (BytesRead < BytesToRead)
 	{
+#if UE_VERSION_OLDER_THAN(5, 4, 0)
 		DownloadedData.SetNum(BytesRead, false);
+#else
+		DownloadedData.SetNum(BytesRead, EAllowShrinking::No);
+#endif
+		
 	}
 
 	const int32 FinalSize = DownloadedData.Num();

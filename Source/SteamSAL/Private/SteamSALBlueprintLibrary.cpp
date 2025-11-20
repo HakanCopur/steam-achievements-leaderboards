@@ -1,6 +1,5 @@
 // Copyright (c) 2025 UnForge. All rights reserved.
 
-
 #include "SteamSALBlueprintLibrary.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -12,6 +11,9 @@
 #include "TextureResource.h"
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"  
+#include "Misc/FileHelper.h"
+#include "HAL/FileManager.h"
 
 THIRD_PARTY_INCLUDES_START
 #include "steam/steam_api.h"

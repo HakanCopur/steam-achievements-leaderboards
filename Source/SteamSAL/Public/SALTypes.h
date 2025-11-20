@@ -10,13 +10,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSteamSAL, Log, All);
 UENUM(BlueprintType)
 enum class ELeaderboardRequestType : uint8
 {
-	Global UMETA(DisplayName="Global",
-		ToolTip="Downloads a global range by absolute ranks [RangeStart..RangeEnd] (1-based)."),
-	GlobalAroundUser UMETA(DisplayName="Global Around User",
-		ToolTip=
-		"Downloads entries around the local user; use negative RangeStart and positive RangeEnd (e.g., -5..+5)."),
-	Friends UMETA(DisplayName="Friends",
-		ToolTip="Downloads only Steam friends who have scores; RangeStart/End are ignored.")
+	Global UMETA(DisplayName="Global", ToolTip="Downloads a global range by absolute ranks [RangeStart..RangeEnd] (1-based)."),
+	GlobalAroundUser UMETA(DisplayName="Global Around User", ToolTip= "Downloads entries around the local user; use negative RangeStart and positive RangeEnd (e.g., -5..+5)."),
+	Friends UMETA(DisplayName="Friends", ToolTip="Downloads only Steam friends who have scores; RangeStart/End are ignored.")
 };
 
 USTRUCT(BlueprintType)
@@ -25,8 +21,7 @@ struct STEAMSAL_API FSAL_UGCHandle
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|UGC",
-		meta=(ToolTip="Raw 64-bit Steam UGC handle. Zero means invalid."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL|UGC", meta=(ToolTip="Raw 64-bit Steam UGC handle. Zero means invalid."))
 	int64 Value = 0;
 
 	bool IsValid() const
@@ -105,11 +100,8 @@ public:
 UENUM(BlueprintType)
 enum class ESALLeaderboardUploadMethod : uint8
 {
-	KeepBestScore UMETA(DisplayName = "Keep Best Score (Only Update Score If Better)",
-		ToolTip=
-		"Only replaces the stored score if the new score is better according to the leaderboard's sort method."),
-	ForceUpdate UMETA(DisplayName = "Force Update Score (Always Overwrite)",
-		ToolTip= "Always updates the stored score, even if the new score is worse.")
+	KeepBestScore UMETA(DisplayName = "Keep Best Score (Only Update Score If Better)", ToolTip="Only replaces the stored score if the new score is better according to the leaderboard's sort method."),
+	ForceUpdate UMETA(DisplayName = "Force Update Score (Always Overwrite)", ToolTip= "Always updates the stored score, even if the new score is worse.")
 };
 
 USTRUCT(BlueprintType)
@@ -156,8 +148,7 @@ enum class ESALStatReadType : uint8
 
 	Float UMETA(DisplayName="Float", ToolTip="Read the stat as a floating point value (float)."),
 
-	Average UMETA(DisplayName="Average",
-		ToolTip="Read the stat as a float representing an average rate. Use UpdateAvgRateStat to set these.")
+	Average UMETA(DisplayName="Average", ToolTip="Read the stat as a float representing an average rate. Use UpdateAvgRateStat to set these.")
 };
 
 USTRUCT(BlueprintType)
@@ -183,28 +174,22 @@ struct FSAL_StoredStat
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		meta=(ToolTip="Friendly name for UI (falls back to APIStatName if not provided)."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL", meta=(ToolTip="Friendly name for UI (falls back to APIStatName if not provided)."))
 	FString FriendlyStatName = TEXT("");
 
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		meta=(ToolTip="API name exactly as defined in Steam."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL", meta=(ToolTip="API name exactly as defined in Steam."))
 	FString APIStatName = TEXT("");
 
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		meta=(ToolTip="Read type used for this value (Integer or Float)."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL", meta=(ToolTip="Read type used for this value (Integer or Float)."))
 	ESALStatReadType StatType = ESALStatReadType::Integer;
 
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		meta=(ToolTip="Integer value (valid if StatType == Integer)."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL", meta=(ToolTip="Integer value (valid if StatType == Integer)."))
 	int32 IntegerValue = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		meta=(ToolTip="Float value (valid if StatType == Float)."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL", meta=(ToolTip="Float value (valid if StatType == Float)."))
 	float FloatValue = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, Category="SteamSAL",
-		meta=(ToolTip="True if this individual read succeeded from cached Steam data."))
+	UPROPERTY(BlueprintReadOnly, Category="SteamSAL", meta=(ToolTip="True if this individual read succeeded from cached Steam data."))
 	bool bSucceeded = false;
 };
 
@@ -213,32 +198,22 @@ struct FSAL_StatWrite
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
-		meta=(ToolTip="Stat API name exactly as defined in Steam (e.g., 'TOTAL_JUMPS')."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL", meta=(ToolTip="Stat API name exactly as defined in Steam (e.g., 'TOTAL_JUMPS')."))
 	FString APIStatName = TEXT("");
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
-		meta=(ToolTip="Write type (Integer, Float, or Average). Average uses CountThisSession & SessionLengthSeconds."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL", meta=(ToolTip="Write type (Integer, Float, or Average). Average uses CountThisSession & SessionLengthSeconds."))
 	ESALStatReadType StatType = ESALStatReadType::Integer;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
-		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Integer",
-			ToolTip="New integer value to set when StatType is Integer."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL", meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Integer", ToolTip="New integer value to set when StatType is Integer."))
 	int32 IntegerValue = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
-		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Float",
-			ToolTip="New float value to set when StatType is Float."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL", meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Float", ToolTip="New float value to set when StatType is Float."))
 	float FloatValue = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
-		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",
-			ToolTip="Average stats: amount counted this session (e.g., events)."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL", meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",ToolTip="Average stats: amount counted this session (e.g., events)."))
 	float CountThisSession = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL",
-		meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average",
-			ToolTip="Average stats: duration for this measurement in seconds (must be > 0)."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="SteamSAL", meta=(EditConditionHides, EditCondition="StatType == ESALStatReadType::Average", ToolTip="Average stats: duration for this measurement in seconds (must be > 0)."))
 	float SessionLengthSeconds = 0.0f;
 };
 
